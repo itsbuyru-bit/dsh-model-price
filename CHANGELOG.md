@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] — 2026-10-22
+
+### Added
+
+- Per-model Peak schedule: a model row may now carry its own `schedule`
+  (Peak windows, weekdays and holidays). Every field inherits the shared
+  schedule unless overridden, and the Peak/Off-Peak tariff of an event is
+  resolved against the schedule of the model that produced it.
+- Price provenance: a model row can store `source` (the pricing-page URL and the
+  date it was checked). The collapsible **Source and check date** block shows the
+  domain, `Checked YYYY-MM-DD (UTC)` and an Open button, and expands to the URL
+  and check-date inputs. Invalid URLs and non-ISO dates are dropped by the Host
+  instead of being stored.
+
+### Changed
+
+- Settings are split into two cards: **Display** (currency, rate, language,
+  budget, visibility) and **Discounts & time** (shared Peak schedule and
+  Search & Fetch billing), the latter placed right under Display.
+- The model card gained an optional **Own Peak schedule for this model** editor,
+  seeded from the shared values when first enabled.
+- The holiday field is labelled **Holiday days** / **Праздничные дни** instead of
+  "Chinese public holidays": the preset list is still DeepSeek's 2026 Chinese
+  holidays, but any country's holidays can be entered.
+
+[1.7.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.7.0
+
 ## [1.6.2] — 2026-10-22
 
 ### Changed

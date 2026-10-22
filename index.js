@@ -11,8 +11,11 @@ import {
   costOf,
   isNewer,
   isOffPeak,
+  isOffPeakFor,
   modelId,
   normalizePrice,
+  normalizeSchedule,
+  normalizeSource,
   num,
   priceOf,
   requestUsage,
@@ -180,8 +183,8 @@ export function apply(ctx, rawConfig = {}) {
       const route = routeOf(event)
       if (!usage) return { ...state, missing: state.missing + 1 }
       if (!route) return state
-      const tariff = isOffPeak(event.time, runtime.config) ? 'off' : 'peak'
       const key = `${route.provider}/${route.model}`
+      const tariff = isOffPeakFor(runtime.config, key, event.time) ? 'off' : 'peak'
       const models = { ...state.models }
       const buckets = bucketsOf(usage)
       // A retried step settles again at the same turn/step: replace its previous sample.
@@ -251,8 +254,8 @@ export function apply(ctx, rawConfig = {}) {
     const usage = usageOf(event)
     const route = routeOf(event)
     if (!usage || !route) return
-    const tariff = isOffPeak(event.time, runtime.config) ? 'off' : 'peak'
     const key = `${route.provider}/${route.model}`
+    const tariff = isOffPeakFor(runtime.config, key, event.time) ? 'off' : 'peak'
     const totals = runtime.totals
     if (!totals.models[key]) totals.models[key] = emptyModel()
     const previous = runtime.lastBySession.get(session)
@@ -631,10 +634,14 @@ export function apply(ctx, rawConfig = {}) {
           const peak = normalizePrice(row.peak, 'peak')
           if (!peak) continue
           const off = normalizePrice(row.off, 'off') || peak
+          const schedule = normalizeSchedule(row.schedule)
+          const source = normalizeSource(row.source)
           cleaned[key] = {
             currency: row.currency === 'CNY' ? 'CNY' : 'USD',
             peak: { input: peak.input, output: peak.output, cacheHit: num(row.peak.cacheHit), cacheWrite: num(row.peak.cacheWrite) },
             off: { input: off.input, output: off.output, cacheHit: num(row.off && row.off.cacheHit), cacheWrite: num(row.off && row.off.cacheWrite) },
+            ...(schedule ? { schedule } : {}),
+            ...(source ? { source } : {}),
           }
         }
         cfg.prices = cleaned

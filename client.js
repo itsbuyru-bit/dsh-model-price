@@ -328,6 +328,17 @@ window.__ModuleLoader__.load({
       '.mp-model-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}',
       '.mp-model-toolbar .spacer{flex:1}',
       '.mp-model-body{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1)}',
+      '.mp-model-schedule{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1)}',
+      '.mp-model-schedule .hint{font-size:10.5px;color:var(--dsw-alias-label-secondary);opacity:.8}',
+      '.mp-source{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:8px 10px;background:var(--dsw-alias-bg-layer-1);display:flex;flex-direction:column;gap:8px}',
+      '.mp-source-title{font-size:10.5px;font-weight:600;color:var(--dsw-alias-label-secondary);text-transform:uppercase;letter-spacing:.3px}',
+      '.mp-source-head{display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:6px;padding:2px 0}',
+      '.mp-source-head:hover .mp-source-title{color:var(--dsw-alias-label-primary)}',
+      '.mp-source-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:8px}',
+      '.mp-source-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--dsw-alias-label-secondary)}',
+      '.mp-source-host{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dsw-alias-label-primary)}',
+      '.mp-source-line .mp-btn{height:24px;padding:0 8px;font-size:11px}',
+      '.mp-check-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-primary)}',
       '.mp-model-name{font-weight:650;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}',
       '.mp-model-head .spacer{flex:1}',
       '.mp-price-grid{display:grid;grid-template-columns:78px repeat(4,minmax(56px,1fr));gap:6px;align-items:center}',
@@ -734,6 +745,9 @@ window.__ModuleLoader__.load({
     function normalizeRow(key, row) {
       var peak = row && row.peak ? row.peak : {}
       var off = row && row.off ? row.off : {}
+      // A row-level `schedule` is a per-model override of the shared Peak
+      // windows/days/holidays; absent means "follow the shared schedule".
+      var schedule = row && row.schedule && typeof row.schedule === 'object' ? row.schedule : null
       return {
         key: key,
         currency: row && row.currency === 'CNY' ? 'CNY' : 'USD',
@@ -748,6 +762,18 @@ window.__ModuleLoader__.load({
           output: off.output === null || off.output === undefined ? '' : String(off.output),
           cacheHit: off.cacheHit === null || off.cacheHit === undefined ? '' : String(off.cacheHit),
           cacheWrite: off.cacheWrite === null || off.cacheWrite === undefined ? '' : String(off.cacheWrite),
+        },
+        schedule: {
+          enabled: Boolean(schedule),
+          peakWindows: schedule && typeof schedule.peakWindows === 'string' ? schedule.peakWindows : '',
+          peakDays: schedule && Array.isArray(schedule.peakDays) ? schedule.peakDays.slice() : [],
+          holidays: schedule && Array.isArray(schedule.holidays) ? schedule.holidays.slice() : [],
+        },
+        // Provenance of the numbers: the page they were taken from and the date
+        // they were checked. Optional, free-form for the user.
+        source: {
+          url: row && row.source && typeof row.source.url === 'string' ? row.source.url : '',
+          checkedAt: row && row.source && typeof row.source.checkedAt === 'string' ? row.source.checkedAt : '',
         },
       }
     }
@@ -766,6 +792,9 @@ window.__ModuleLoader__.load({
       var statusBox = useState('')
       var displayStatus = statusBox[0]
       var setDisplayStatus = statusBox[1]
+      var scheduleStatusBox = useState('')
+      var scheduleStatus = scheduleStatusBox[0]
+      var setScheduleStatus = scheduleStatusBox[1]
       var modelsStatusBox = useState('')
       var modelsStatus = modelsStatusBox[0]
       var setModelsStatus = modelsStatusBox[1]
@@ -778,6 +807,9 @@ window.__ModuleLoader__.load({
       var expandedBox = useState({})
       var expanded = expandedBox[0]
       var setExpanded = expandedBox[1]
+      var sourceOpenBox = useState({})
+      var sourceOpen = sourceOpenBox[0]
+      var setSourceOpen = sourceOpenBox[1]
       var catalogBox = useState('')
       var catalogStatus = catalogBox[0]
       var setCatalogStatus = catalogBox[1]
@@ -847,12 +879,76 @@ window.__ModuleLoader__.load({
         })
       }
 
+      /** Weekday checkboxes for Peak days, shared by the global and per-model schedule. */
+      function daysRow(value, onChange) {
+        return h('div', { key: 'd', style: { display: 'flex', gap: 10, flexWrap: 'wrap' } }, weekdayNames(localeTag).map(function (name, index) {
+          var dayNumber = index + 1
+          return h('label', {
+            key: 'd' + dayNumber,
+            className: 'mp-check-row',
+            style: { fontSize: 12 },
+          }, [
+            h('input', {
+              key: 'i', type: 'checkbox', checked: (value || []).indexOf(dayNumber) !== -1,
+              onChange: function (event) {
+                var days = (value || []).slice()
+                var position = days.indexOf(dayNumber)
+                if (event.target.checked && position === -1) days.push(dayNumber)
+                if (!event.target.checked && position !== -1) days.splice(position, 1)
+                onChange(days.sort(function (a, b) { return a - b }))
+              },
+            }),
+            h('span', { key: 's' }, name),
+          ])
+        }))
+      }
+
+      function setRowSchedule(index, patch) {
+        patchRow(index, function (row) {
+          return Object.assign({}, row, { schedule: Object.assign({}, row.schedule, patch) })
+        })
+      }
+
+      function setRowSource(index, key, value) {
+        patchRow(index, function (row) {
+          var source = Object.assign({}, row.source)
+          source[key] = value
+          return Object.assign({}, row, { source: source })
+        })
+      }
+
+      /** Host part of a URL, or '' when the text is not an absolute http(s) URL. */
+      function hostOf(url) {
+        try {
+          var parsed = new URL(url)
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return ''
+          return parsed.host
+        } catch (error) {
+          return ''
+        }
+      }
+
+      /** Turning an override on seeds it from the shared schedule, so the card
+       *  opens with the values that were in effect instead of a blank form. */
+      function toggleRowSchedule(index, enabled) {
+        patchRow(index, function (row) {
+          var schedule = Object.assign({}, row.schedule, { enabled: enabled })
+          if (enabled) {
+            if (!schedule.peakWindows) schedule.peakWindows = draft.peakWindows
+            if (!schedule.peakDays || schedule.peakDays.length === 0) schedule.peakDays = (draft.peakDays || []).slice()
+            if (!schedule.holidays || schedule.holidays.length === 0) schedule.holidays = (draft.holidays || []).slice()
+          }
+          return Object.assign({}, row, { schedule: schedule })
+        })
+      }
+
       function summaryOf(row) {
         var peak = row.peak || {}
         var parts = []
         if (peak.input) parts.push(t('sumIn') + ' ' + peak.input)
         if (peak.output) parts.push(t('sumOut') + ' ' + peak.output)
         if (peak.cacheHit) parts.push(t('sumHit') + ' ' + peak.cacheHit)
+        if (row.schedule && row.schedule.enabled) parts.push(t('ownSchedule'))
         return parts.length > 0 ? parts.join(' · ') : t('noPrice')
       }
 
@@ -867,6 +963,13 @@ window.__ModuleLoader__.load({
         var next = {}
         for (var i = 0; i < rows.length; i += 1) next[rows[i].key] = true
         setExpanded(next)
+      }
+
+      function toggleSource(key) {
+        var next = Object.assign({}, sourceOpen)
+        if (next[key]) delete next[key]
+        else next[key] = true
+        setSourceOpen(next)
       }
 
       function loadModels() {
@@ -894,24 +997,35 @@ window.__ModuleLoader__.load({
         call('save', {
           displayCurrency: draft.displayCurrency,
           rate: draft.rate,
-          peakWindows: draft.peakWindows,
-          peakDays: draft.peakDays,
-          holidays: draft.holidays,
           language: draft.language,
           hideWallet: draft.hideWallet,
           hideLine: draft.hideLine,
           checkUpdates: draft.checkUpdates,
           showBestTime: draft.showBestTime,
           budget: draft.budget === '' ? null : draft.budget,
-          includeRequests: draft.includeRequests,
-          searchPrice: draft.searchPrice,
-          fetchPrice: draft.fetchPrice,
-          requestBillingFrom: draft.requestBillingFrom,
         }).then(function (value) {
           setDisplayStatus('saved')
           setLoaded(value)
         }).catch(function (error) {
           setDisplayStatus('error:' + String(error.message || error))
+        })
+      }
+
+      function saveSchedule() {
+        setScheduleStatus('saving')
+        call('save', {
+          peakWindows: draft.peakWindows,
+          peakDays: draft.peakDays,
+          holidays: draft.holidays,
+          includeRequests: draft.includeRequests,
+          searchPrice: draft.searchPrice,
+          fetchPrice: draft.fetchPrice,
+          requestBillingFrom: draft.requestBillingFrom,
+        }).then(function (value) {
+          setScheduleStatus('saved')
+          setLoaded(value)
+        }).catch(function (error) {
+          setScheduleStatus('error:' + String(error.message || error))
         })
       }
 
@@ -922,10 +1036,24 @@ window.__ModuleLoader__.load({
           var row = rows[i]
           if (!row || !row.key) continue
           if (row.peak.input !== '' || row.peak.output !== '') {
+            var schedule = null
+            if (row.schedule && row.schedule.enabled) {
+              schedule = {
+                peakWindows: row.schedule.peakWindows,
+                peakDays: row.schedule.peakDays,
+                holidays: row.schedule.holidays,
+              }
+            }
+            var source = null
+            if (row.source && (row.source.url.trim() || row.source.checkedAt.trim())) {
+              source = { url: row.source.url.trim(), checkedAt: row.source.checkedAt.trim() }
+            }
             prices[row.key] = {
               currency: row.currency,
               peak: { input: row.peak.input, output: row.peak.output, cacheHit: row.peak.cacheHit, cacheWrite: row.peak.cacheWrite },
               off: { input: row.off.input, output: row.off.output, cacheHit: row.off.cacheHit, cacheWrite: row.off.cacheWrite },
+              schedule: schedule,
+              source: source,
             }
           }
         }
@@ -1037,7 +1165,54 @@ window.__ModuleLoader__.load({
               h('span', { className: 'hint', key: 'h' }, t('budgetHint')),
             ]),
           ]),
-          h('div', { className: 'mp-field', key: 'windows', style: { marginTop: 10 } }, [
+          h('div', { className: 'mp-field', key: 'besttime', style: { marginTop: 10 } }, [
+            h('label', {
+              key: 'cb',
+              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
+            }, [
+              h('input', {
+                key: 'i', type: 'checkbox', checked: draft.showBestTime,
+                onChange: function (event) { field('showBestTime', event.target.checked) },
+              }),
+              h('span', { key: 's' }, t('showBestTimeLabel')),
+            ]),
+            h('span', { className: 'hint', key: 'h' }, t('showBestTimeHint')),
+          ]),
+          h('div', { className: 'mp-grid', key: 'visibility', style: { marginTop: 10 } }, [
+            h('div', { className: 'mp-field', key: 'hidew' }, [
+              h('label', { key: 'l' }, t('hideWalletLabel')),
+              h('label', { key: 'cb', style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } }, [
+                h('input', {
+                  key: 'i', type: 'checkbox', checked: draft.hideWallet,
+                  onChange: function (event) { field('hideWallet', event.target.checked) },
+                }),
+                h('span', { key: 's' }, t('hideWalletHint')),
+              ]),
+            ]),
+            h('div', { className: 'mp-field', key: 'hidel' }, [
+              h('label', { key: 'l' }, t('hideLineLabel')),
+              h('label', { key: 'cb', style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } }, [
+                h('input', {
+                  key: 'i', type: 'checkbox', checked: draft.hideLine,
+                  onChange: function (event) { field('hideLine', event.target.checked) },
+                }),
+                h('span', { key: 's' }, t('hideLineHint')),
+              ]),
+            ]),
+          ]),
+          h('div', { className: 'mp-card-foot', key: 'foot' }, [
+            statusText(displayStatus),
+            h('button', {
+              key: 'ap', className: 'mp-btn pri',
+              disabled: displayStatus === 'saving',
+              onClick: saveDisplay,
+            }, t('apply')),
+          ]),
+        ]),
+        h('div', { className: 'mp-card', key: 'schedule' }, [
+          h('h3', { key: 'h' }, t('discountsTitle')),
+          h('div', { className: 'mp-muted', key: 'i', style: { marginTop: -4, marginBottom: 8, fontSize: 11, lineHeight: 1.5 } }, t('discountsHint')),
+          h('div', { className: 'mp-field', key: 'windows' }, [
             h('label', { key: 'l' }, t('peakWindowsLabel')),
             h('input', {
               key: 'i', className: 'mp-in', placeholder: '01:00-04:00, 06:00-10:00', value: draft.peakWindows,
@@ -1047,26 +1222,7 @@ window.__ModuleLoader__.load({
           ]),
           h('div', { className: 'mp-field', key: 'days', style: { marginTop: 10 } }, [
             h('label', { key: 'l' }, t('peakDaysLabel')),
-            h('div', { key: 'd', style: { display: 'flex', gap: 10, flexWrap: 'wrap' } }, weekdayNames(localeTag).map(function (name, index) {
-              var dayNumber = index + 1
-              var checked = (draft.peakDays || []).indexOf(dayNumber) !== -1
-              return h('label', {
-                key: 'd' + dayNumber,
-                style: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
-              }, [
-                h('input', {
-                  key: 'i', type: 'checkbox', checked: checked,
-                  onChange: function (event) {
-                    var days = (draft.peakDays || []).slice()
-                    var position = days.indexOf(dayNumber)
-                    if (event.target.checked && position === -1) days.push(dayNumber)
-                    if (!event.target.checked && position !== -1) days.splice(position, 1)
-                    field('peakDays', days.sort(function (a, b) { return a - b }))
-                  },
-                }),
-                h('span', { key: 's' }, name),
-              ])
-            })),
+            daysRow(draft.peakDays, function (days) { field('peakDays', days) }),
           ]),
           h('div', { className: 'mp-field', key: 'holidays', style: { marginTop: 10 } }, [
             h('label', { key: 'l' }, t('holidaysLabel')),
@@ -1117,47 +1273,12 @@ window.__ModuleLoader__.load({
             }),
             h('span', { className: 'hint', key: 'h' }, t('billingFromHint')),
           ]),
-          h('div', { className: 'mp-field', key: 'besttime', style: { marginTop: 10 } }, [
-            h('label', {
-              key: 'cb',
-              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
-            }, [
-              h('input', {
-                key: 'i', type: 'checkbox', checked: draft.showBestTime,
-                onChange: function (event) { field('showBestTime', event.target.checked) },
-              }),
-              h('span', { key: 's' }, t('showBestTimeLabel')),
-            ]),
-            h('span', { className: 'hint', key: 'h' }, t('showBestTimeHint')),
-          ]),
-          h('div', { className: 'mp-grid', key: 'visibility', style: { marginTop: 10 } }, [
-            h('div', { className: 'mp-field', key: 'hidew' }, [
-              h('label', { key: 'l' }, t('hideWalletLabel')),
-              h('label', { key: 'cb', style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } }, [
-                h('input', {
-                  key: 'i', type: 'checkbox', checked: draft.hideWallet,
-                  onChange: function (event) { field('hideWallet', event.target.checked) },
-                }),
-                h('span', { key: 's' }, t('hideWalletHint')),
-              ]),
-            ]),
-            h('div', { className: 'mp-field', key: 'hidel' }, [
-              h('label', { key: 'l' }, t('hideLineLabel')),
-              h('label', { key: 'cb', style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } }, [
-                h('input', {
-                  key: 'i', type: 'checkbox', checked: draft.hideLine,
-                  onChange: function (event) { field('hideLine', event.target.checked) },
-                }),
-                h('span', { key: 's' }, t('hideLineHint')),
-              ]),
-            ]),
-          ]),
           h('div', { className: 'mp-card-foot', key: 'foot' }, [
-            statusText(displayStatus),
+            statusText(scheduleStatus),
             h('button', {
               key: 'ap', className: 'mp-btn pri',
-              disabled: displayStatus === 'saving',
-              onClick: saveDisplay,
+              disabled: scheduleStatus === 'saving',
+              onClick: saveSchedule,
             }, t('apply')),
           ]),
         ]),
@@ -1221,6 +1342,52 @@ window.__ModuleLoader__.load({
                 }, t('remove')),
               ]),
               isOpen ? h('div', { className: 'mp-model-body', key: 'body' }, [
+                h('div', { className: 'mp-source', key: 'src' }, [
+                  h('div', {
+                    className: 'mp-source-head', key: 'head', role: 'button', tabIndex: 0,
+                    'aria-expanded': Boolean(sourceOpen[row.key]),
+                    onClick: function () { toggleSource(row.key) },
+                    onKeyDown: function (event) {
+                      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleSource(row.key) }
+                    },
+                  }, [
+                    h('span', { className: 'mp-chev' + (sourceOpen[row.key] ? ' open' : ''), key: 'ch' }, '▸'),
+                    h('span', { className: 'mp-source-title', key: 't' }, t('sourceTitle')),
+                  ]),
+                  sourceOpen[row.key] ? h('div', { className: 'mp-source-grid', key: 'g' }, [
+                    h('div', { className: 'mp-field', key: 'u' }, [
+                      h('label', { key: 'l' }, t('sourceUrlLabel')),
+                      h('input', {
+                        key: 'i', className: 'mp-in', placeholder: 'https://api-docs.deepseek.com/quick_start/pricing',
+                        value: row.source.url,
+                        onClick: function (event) { event.stopPropagation() },
+                        onChange: function (event) { setRowSource(index, 'url', event.target.value) },
+                      }),
+                      h('span', { className: 'hint', key: 'h' }, t('sourceUrlHint')),
+                    ]),
+                    h('div', { className: 'mp-field', key: 'd' }, [
+                      h('label', { key: 'l' }, t('checkedAtLabel')),
+                      h('input', {
+                        key: 'i', className: 'mp-in', placeholder: '2026-10-21',
+                        value: row.source.checkedAt,
+                        onClick: function (event) { event.stopPropagation() },
+                        onChange: function (event) { setRowSource(index, 'checkedAt', event.target.value) },
+                      }),
+                      h('span', { className: 'hint', key: 'h' }, t('checkedAtHint')),
+                    ]),
+                  ]) : null,
+                  hostOf(row.source.url) || row.source.checkedAt
+                    ? h('div', { className: 'mp-source-line', key: 'line' }, [
+                      hostOf(row.source.url) ? h('span', { key: 'host', className: 'mp-source-host' }, hostOf(row.source.url)) : null,
+                      row.source.checkedAt ? h('span', { key: 'date' }, interpolate(t('checkedAtLine'), { date: row.source.checkedAt })) : null,
+                      hostOf(row.source.url) ? h('a', {
+                        key: 'open', className: 'mp-btn ghost',
+                        href: row.source.url, target: '_blank', rel: 'noopener noreferrer',
+                        onClick: function (event) { event.stopPropagation() },
+                      }, t('sourceOpen')) : null,
+                    ])
+                    : null,
+                ]),
                 h('div', { className: 'mp-tariff', key: 'tp' }, t('peakColumn')),
                 h('div', { className: 'mp-price-grid', key: 'peak' }, [h('span', { key: 'x', className: 'rh' }, '')].concat(
                   PRICE_FIELDS.map(function (f) { return h('span', { key: 'h-' + f.key, className: 'h' }, t(f.label)) })
@@ -1249,6 +1416,43 @@ window.__ModuleLoader__.load({
                     })
                   })
                 )),
+                h('div', { className: 'mp-model-schedule', key: 'sch' }, [
+                  h('label', { key: 'cb', className: 'mp-check-row' }, [
+                    h('input', {
+                      key: 'i', type: 'checkbox', checked: row.schedule.enabled,
+                      onChange: function (event) { toggleRowSchedule(index, event.target.checked) },
+                    }),
+                    h('span', { key: 's' }, t('modelScheduleLabel')),
+                  ]),
+                  row.schedule.enabled
+                    ? h('div', { key: 'own', style: { display: 'flex', flexDirection: 'column', gap: 8 } }, [
+                      h('div', { className: 'mp-field', key: 'w' }, [
+                        h('label', { key: 'l' }, t('peakWindowsLabel')),
+                        h('input', {
+                          key: 'i', className: 'mp-in', placeholder: '01:00-04:00, 06:00-10:00',
+                          value: row.schedule.peakWindows,
+                          onChange: function (event) { setRowSchedule(index, { peakWindows: event.target.value }) },
+                        }),
+                      ]),
+                      h('div', { className: 'mp-field', key: 'd' }, [
+                        h('label', { key: 'l' }, t('peakDaysLabel')),
+                        daysRow(row.schedule.peakDays, function (days) { setRowSchedule(index, { peakDays: days }) }),
+                      ]),
+                      h('div', { className: 'mp-field', key: 'h' }, [
+                        h('label', { key: 'l' }, t('holidaysLabel')),
+                        h('input', {
+                          key: 'i', className: 'mp-in', placeholder: '2026-10-01, 2026-10-02',
+                          value: (row.schedule.holidays || []).join(', '),
+                          onChange: function (event) {
+                            var list = event.target.value.split(',').map(function (part) { return part.trim() }).filter(Boolean)
+                            setRowSchedule(index, { holidays: list })
+                          },
+                        }),
+                        h('span', { className: 'hint', key: 'sh' }, t('modelScheduleHint')),
+                      ]),
+                    ])
+                    : h('span', { key: 'inherit', className: 'hint' }, interpolate(t('modelScheduleInherit'), { windows: draft.peakWindows })),
+                ]),
               ]) : null,
             ])
           }),

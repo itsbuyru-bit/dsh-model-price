@@ -118,7 +118,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.6.2** |
+| Plugin version | **1.7.0** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -187,10 +187,20 @@ refresh.
 ## Usage
 
 1. Open **Settings → Models & prices**.
-2. Press **Load models from Models** to import the models configured in the
+2. In **Discounts & time** set the shared Peak windows, Peak days, holiday days
+   and the Search & Fetch billing. The block sits right under **Display** and
+   applies to every model that has no schedule of its own.
+3. Press **Load models from Models** to import the models configured in the
    harness, or add one manually by provider and model id.
-3. Expand a model row and fill the Peak / Off-Peak prices per 1M tokens.
-4. Press **Apply** at the bottom of the block.
+4. Expand a model row and fill the Peak / Off-Peak prices per 1M tokens. The same
+   card records where the numbers came from: open **Source and check date**, paste
+   the pricing-page URL and the check date, and the collapsed row keeps showing the
+   domain, `Checked YYYY-MM-DD (UTC)` and an **Open** button.
+5. Optional: tick **Own Peak schedule for this model** in a model card and give
+   that model its own windows, weekdays and holidays. Overrides are merged field
+   by field with the shared schedule, so leaving the windows blank keeps the
+   common ones.
+6. Press **Apply** at the bottom of each block you changed.
 
 The composer line shows `Session: … · Wallet: … · Peak`. Click it for the token
 composition, per-model cost, wallet breakdown and the all-time total; the eye
@@ -202,8 +212,9 @@ button masks the wallet.
 | Eye button | Hides or shows the wallet amount (persisted) |
 | **Load models from Models** | Mirrors the models bound in Settings → Models; unbound rows are removed |
 | **Expand all / Collapse all** | Opens or closes every price row |
-| **Apply** (Display) | Saves currency, rate, window, language and toggles |
-| **Apply** (Models) | Saves the price table |
+| **Apply** (Display) | Saves currency, rate, language and visibility toggles |
+| **Apply** (Discounts & time) | Saves the shared Peak schedule and Search & Fetch billing |
+| **Apply** (Models) | Saves the price table and the per-model schedule overrides |
 | **Reset total** | Resets the all-time counter; session history is kept |
 
 Prices are applied retroactively: editing a rate recalculates the visible
@@ -217,7 +228,9 @@ and is listed as unpriced instead of counting as zero.
 ### Host half — `index.js`
 
 1. Registers the `modelPrice` session projection, keyed by
-   `provider/model` and split into Peak / Off-Peak token buckets.
+   `provider/model` and split into Peak / Off-Peak token buckets. The tariff of
+   an event is resolved against that model's own schedule when it has one, and
+   against the shared schedule otherwise.
 2. Folds `assistant/message` events only; a retried step at the same
    `turn/step` replaces its previous sample instead of double counting.
 3. Keeps an all-time counter in `totals.json`, updated from `session/event`.

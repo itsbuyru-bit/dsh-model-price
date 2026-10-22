@@ -7,10 +7,14 @@ import {
   costOf,
   isNewer,
   isOffPeak,
+  isPeakFor,
   modelId,
   normalizePrice,
+  normalizeSchedule,
+  normalizeSource,
   priceOf,
   requestUsage,
+  scheduleOf,
 } from '../lib/pricing.js'
 
 test('costOf prices each bucket per million tokens', () => {
@@ -152,4 +156,82 @@ test('modelId accepts strings and objects only', () => {
   assert.equal(modelId({ id: 'b' }), 'b')
   assert.equal(modelId({ name: 'c' }), null)
   assert.equal(modelId(null), null)
+})
+
+test('normalizeSchedule keeps only well-formed overrides and null means "inherit"', () => {
+  assert.equal(normalizeSchedule(null), null)
+  assert.equal(normalizeSchedule({}), null)
+  assert.equal(normalizeSchedule({ peakWindows: '   ' }), null)
+  const schedule = normalizeSchedule({
+    peakWindows: ' 22:00-02:00 ',
+    peakDays: [5, 1, 1, 9, 'x'],
+    holidays: ['2026-05-01', 'nope'],
+  })
+  assert.deepEqual(schedule, {
+    peakWindows: '22:00-02:00',
+    peakDays: [1, 5],
+    holidays: ['2026-05-01'],
+  })
+  // An explicit empty holiday list is a meaningful override, not "inherit".
+  assert.deepEqual(normalizeSchedule({ holidays: [] }), { holidays: [] })
+})
+
+test('scheduleOf inherits the global schedule field by field', () => {
+  const config = {
+    peakWindows: '01:00-04:00, 06:00-10:00',
+    peakDays: [1, 2, 3, 4, 5],
+    holidays: ['2026-05-01'],
+    prices: {
+      'deepseek-account/deepseek-flash': { schedule: { peakWindows: '22:00-02:00' } },
+      'deepseek-account/deepseek-v4-pro': { schedule: { holidays: [] } },
+    },
+  }
+  assert.deepEqual(scheduleOf(config, 'other/model'), {
+    peakWindows: '01:00-04:00, 06:00-10:00',
+    peakDays: [1, 2, 3, 4, 5],
+    holidays: ['2026-05-01'],
+  })
+  assert.deepEqual(scheduleOf(config, 'deepseek-account/deepseek-flash'), {
+    peakWindows: '22:00-02:00',
+    peakDays: [1, 2, 3, 4, 5],
+    holidays: ['2026-05-01'],
+  })
+  assert.deepEqual(scheduleOf(config, 'deepseek-account/deepseek-v4-pro'), {
+    peakWindows: '01:00-04:00, 06:00-10:00',
+    peakDays: [1, 2, 3, 4, 5],
+    holidays: [],
+  })
+})
+
+test('normalizeSource keeps an http(s) URL and an ISO date only', () => {
+  assert.equal(normalizeSource(null), null)
+  assert.equal(normalizeSource({ url: 'not a url' }), null)
+  assert.equal(normalizeSource({ url: 'javascript:alert(1)', checkedAt: '21.10.2026' }), null)
+  const source = normalizeSource({
+    url: 'https://api-docs.deepseek.com/quick_start/pricing',
+    checkedAt: '2026-10-21',
+  })
+  assert.deepEqual(source, {
+    url: 'https://api-docs.deepseek.com/quick_start/pricing',
+    checkedAt: '2026-10-21',
+  })
+  assert.deepEqual(normalizeSource({ checkedAt: '2026-10-21' }), { checkedAt: '2026-10-21' })
+})
+
+test('isPeakFor applies the per-model override to that model only', () => {
+  const config = {
+    peakWindows: '01:00-04:00',
+    peakDays: [1, 2, 3, 4, 5],
+    holidays: [],
+    prices: {
+      'deepseek-account/deepseek-flash': { schedule: { peakWindows: '12:00-13:00' } },
+    },
+  }
+  // 2026-10-22 is a Thursday.
+  const noon = Date.parse('2026-10-22T12:30:00Z')
+  const night = Date.parse('2026-10-22T02:00:00Z')
+  assert.equal(isPeakFor(config, 'deepseek-account/deepseek-flash', noon), true)
+  assert.equal(isPeakFor(config, 'deepseek-account/deepseek-flash', night), false)
+  assert.equal(isPeakFor(config, 'deepseek-account/deepseek-v4-pro', noon), false)
+  assert.equal(isPeakFor(config, 'deepseek-account/deepseek-v4-pro', night), true)
 })
