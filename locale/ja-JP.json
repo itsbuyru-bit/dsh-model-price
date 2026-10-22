@@ -100,6 +100,8 @@
     "showBestTimeHint": "割引時間帯とカウントダウンを表示します。",
     "bestTime": "最適な時間",
     "bestTimeNow": "現在 Off-Peak（{time} まで・現地時間）",
-    "bestTimeIn": "Off-Peak は {duration} 後に開始 · 現地 {start}–{end}"
+    "bestTimeIn": "Off-Peak は {duration} 後に開始 · 現地 {start}–{end}",
+    "modelsSynced": "同期済み: {n}",
+    "loadModelsHint": "リストは Models 設定と同期し、未設定のモデルは削除されます。"
   }
 }

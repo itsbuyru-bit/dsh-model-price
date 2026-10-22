@@ -100,6 +100,8 @@
     "showBestTimeHint": "Displays the cheap window and a countdown to it.",
     "bestTime": "Best time",
     "bestTimeNow": "Off-Peak now, until {time} (local)",
-    "bestTimeIn": "Off-Peak starts in {duration} · {start}–{end} local"
+    "bestTimeIn": "Off-Peak starts in {duration} · {start}–{end} local",
+    "modelsSynced": "Synced: {n}",
+    "loadModelsHint": "The list mirrors Settings → Models; models not configured there are removed."
   }
 }

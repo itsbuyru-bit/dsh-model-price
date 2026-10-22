@@ -77,8 +77,9 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
   de-duplicated and aborted steps without usage are reported, not guessed.
 - **Peak / Off-Peak** — editable UTC window, orange Peak badge, green Off-Peak
   badge, and the matching price column is used for each settlement.
-- **Model import** — one click loads every model configured in **Settings →
-  Models**; duplicates are skipped and the list is collapsible.
+- **Model sync** — one click mirrors the models bound in **Settings → Models**.
+  Providers with an empty model list contribute nothing, and models removed from
+  that list disappear from the price table with their prices.
 - **Localized** — 9 bundled languages with automatic discovery of new locale
   files.
 - **Best time** — the popover shows the Off-Peak window in local time and a
@@ -97,7 +98,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.3.1** |
+| Plugin version | **1.4.0** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -179,7 +180,7 @@ button masks the wallet.
 |---|---|
 | Click the line | Opens the spend popover |
 | Eye button | Hides or shows the wallet amount (persisted) |
-| **Load models from Models** | Adds missing models from the Harness catalog |
+| **Load models from Models** | Mirrors the models bound in Settings → Models; unbound rows are removed |
 | **Expand all / Collapse all** | Opens or closes every price row |
 | **Apply** (Display) | Saves currency, rate, window, language and toggles |
 | **Apply** (Models) | Saves the price table |

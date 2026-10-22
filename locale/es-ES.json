@@ -100,6 +100,8 @@
     "showBestTimeHint": "Muestra la franja barata y la cuenta atrás.",
     "bestTime": "Mejor momento",
     "bestTimeNow": "Off-Peak ahora, hasta {time} (hora local)",
-    "bestTimeIn": "Off-Peak en {duration} · {start}–{end} local"
+    "bestTimeIn": "Off-Peak en {duration} · {start}–{end} local",
+    "modelsSynced": "Sincronizado: {n}",
+    "loadModelsHint": "La lista refleja Ajustes → Models; los modelos no configurados se eliminan."
   }
 }

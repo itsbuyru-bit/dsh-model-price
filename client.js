@@ -805,21 +805,18 @@ window.__ModuleLoader__.load({
       function loadModels() {
         setCatalogStatus('loading')
         call('catalog', {}).then(function (value) {
-          var seen = {}
-          var next = rows.slice()
-          for (var i = 0; i < rows.length; i += 1) seen[rows[i].key] = true
-          var added = 0
-          for (var j = 0; j < value.models.length; j += 1) {
-            var item = value.models[j]
+          // Mirror Settings → Models: the configured list replaces the table, so
+          // rows for models that are no longer bound disappear together with
+          // their prices.
+          var next = []
+          for (var i = 0; i < value.models.length; i += 1) {
+            var item = value.models[i]
             var key = item.provider + '/' + item.model
-            if (seen[key]) continue
-            seen[key] = true
             var known = loaded && loaded.config && loaded.config.prices ? loaded.config.prices[key] : undefined
             next.push(normalizeRow(key, known))
-            added += 1
           }
           setRows(next)
-          setCatalogStatus(added > 0 ? 'added:' + added : 'empty')
+          setCatalogStatus('synced:' + next.length)
         }).catch(function (error) {
           setCatalogStatus('error:' + String(error.message || error))
         })
@@ -1036,8 +1033,8 @@ window.__ModuleLoader__.load({
               disabled: catalogStatus === 'loading',
               onClick: loadModels,
             }, catalogStatus === 'loading' ? t('loadingModels') : t('loadModels')),
-            catalogStatus.indexOf('added:') === 0
-              ? h('span', { key: 'st', className: 'mp-ok' }, t('addedCount').replace('{n}', catalogStatus.slice(6)))
+            catalogStatus.indexOf('synced:') === 0
+              ? h('span', { key: 'st', className: 'mp-ok' }, t('modelsSynced').replace('{n}', catalogStatus.slice(7)))
               : null,
             catalogStatus === 'empty' ? h('span', { key: 'st2', className: 'mp-muted' }, t('noNewModels')) : null,
             catalogStatus.indexOf('error:') === 0
@@ -1047,6 +1044,7 @@ window.__ModuleLoader__.load({
             h('button', { key: 'exp', className: 'mp-btn ghost', onClick: expandAll }, t('expandAll')),
             h('button', { key: 'col', className: 'mp-btn ghost', onClick: function () { setExpanded({}) } }, t('collapseAll')),
           ]),
+          h('div', { className: 'mp-muted', key: 'loadhint', style: { marginTop: -4, marginBottom: 8, fontSize: 10.5 } }, t('loadModelsHint')),
           rows.length === 0 ? h('div', { className: 'mp-muted', key: 'empty' }, t('noModels')) : null,
           rows.map(function (row, index) {
             var isOpen = expanded[row.key] === true

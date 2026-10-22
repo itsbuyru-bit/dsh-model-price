@@ -100,6 +100,8 @@
     "showBestTimeHint": "显示折扣时段及倒计时。",
     "bestTime": "最佳时间",
     "bestTimeNow": "当前为 Off-Peak，至 {time}（本地时间）",
-    "bestTimeIn": "Off-Peak 将在 {duration} 后开始 · 本地 {start}–{end}"
+    "bestTimeIn": "Off-Peak 将在 {duration} 后开始 · 本地 {start}–{end}",
+    "modelsSynced": "已同步：{n}",
+    "loadModelsHint": "列表与 Models 设置同步；未配置的模型会被移除。"
   }
 }

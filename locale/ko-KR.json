@@ -100,6 +100,8 @@
     "showBestTimeHint": "할인 시간대와 남은 시간을 표시합니다.",
     "bestTime": "최적 시간",
     "bestTimeNow": "지금 Off-Peak, {time}까지 (현지 시간)",
-    "bestTimeIn": "Off-Peak 시작까지 {duration} · 현지 {start}–{end}"
+    "bestTimeIn": "Off-Peak 시작까지 {duration} · 현지 {start}–{end}",
+    "modelsSynced": "동기화됨: {n}",
+    "loadModelsHint": "목록은 Models 설정과 동기화되며, 설정에 없는 모델은 제거됩니다."
   }
 }

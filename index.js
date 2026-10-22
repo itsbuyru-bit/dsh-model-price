@@ -49,6 +49,13 @@ const num = (value) => {
 
 const zeroBuckets = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 })
 
+/** Model entries in provider settings are either ids or `{ id, name, … }` objects. */
+const modelId = (entry) => {
+  if (typeof entry === 'string') return entry
+  if (entry && typeof entry.id === 'string') return entry.id
+  return null
+}
+
 const bucketsOf = (usage) => ({
   input: usage.inputTokens || 0,
   output: usage.outputTokens || 0,
@@ -647,30 +654,82 @@ export function apply(ctx, rawConfig = {}) {
       } catch {
         providers = []
       }
-      const models = []
-      const collect = async (provider) => {
+
+      // Models the user actually bound in Settings → Models. A provider whose
+      // settings entry carries an explicit (even empty) `models` array must be
+      // taken from that array only; the adapter catalog is just its defaults.
+      const configured = new Map()
+      let defaults = null
+      const settings = ctx.get('settings')
+      if (settings && typeof settings.describe === 'function') {
+        let entries = []
         try {
-          const listed = await Promise.race([
-            llm.listModels(provider.id),
+          entries = settings.describe({ redactSecrets: true }) || []
+        } catch {
+          entries = []
+        }
+        for (const entry of entries) {
+          const value = entry.value && typeof entry.value === 'object' ? entry.value : {}
+          if (entry.ns === 'agent-default-model' && typeof value.provider === 'string' && typeof value.model === 'string') {
+            defaults = { provider: value.provider, model: value.model }
+          }
+          if (!String(entry.ns).startsWith('llm-')) continue
+          if (Array.isArray(value.models)) {
+            configured.set(String(entry.ns).slice(4), value.models.map(modelId).filter(Boolean))
+          }
+          if (value.providers && typeof value.providers === 'object') {
+            for (const [pid, providerValue] of Object.entries(value.providers)) {
+              if (providerValue && Array.isArray(providerValue.models)) {
+                configured.set(pid, providerValue.models.map(modelId).filter(Boolean))
+              }
+            }
+          }
+        }
+      }
+
+      const models = []
+      const seen = new Set()
+      const push = (provider, id, name) => {
+        if (!provider || !id) return
+        const key = `${provider}/${id}`
+        if (seen.has(key)) return
+        seen.add(key)
+        models.push({ provider, providerName: provider, model: id, name: name || id })
+      }
+
+      const listedFor = async (providerId) => {
+        try {
+          return await Promise.race([
+            llm.listModels(providerId),
             new Promise((resolve) => {
               const timer = setTimeout(() => resolve([]), 4000)
               timer.unref?.()
             }),
           ])
-          for (const model of listed || []) {
-            if (!model || typeof model.id !== 'string') continue
-            models.push({
-              provider: provider.id,
-              providerName: provider.name || provider.id,
-              model: model.id,
-              name: model.name || model.id,
-            })
-          }
         } catch {
-          /* a provider without a catalog is simply skipped */
+          return []
         }
       }
-      await Promise.all(providers.map((provider) => collect(provider)))
+
+      await Promise.all(providers.map(async (provider) => {
+        const explicit = configured.get(provider.id)
+        if (explicit !== undefined) {
+          // Empty list = the user selected nothing for this provider.
+          if (explicit.length === 0) return
+          const listed = await listedFor(provider.id)
+          const names = new Map((listed || []).map((model) => [model.id, model.name]))
+          for (const id of explicit) push(provider.id, id, names.get(id))
+          return
+        }
+        // Account-scoped providers have no per-model settings: their catalog is
+        // bound to the signed-in account, so it is safe to list.
+        if (!settings || provider.id === 'deepseek-account') {
+          const listed = await listedFor(provider.id)
+          for (const model of listed || []) push(provider.id, model.id, model.name)
+        }
+      }))
+
+      if (defaults) push(defaults.provider, defaults.model, null)
       models.sort((a, b) => a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model))
       return { models }
     },

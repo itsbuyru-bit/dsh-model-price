@@ -100,6 +100,8 @@
     "showBestTimeHint": "Affiche la plage remisée et le compte à rebours.",
     "bestTime": "Meilleur moment",
     "bestTimeNow": "Off-Peak maintenant, jusqu’à {time} (heure locale)",
-    "bestTimeIn": "Off-Peak dans {duration} · {start}–{end} heure locale"
+    "bestTimeIn": "Off-Peak dans {duration} · {start}–{end} heure locale",
+    "modelsSynced": "Synchronisé : {n}",
+    "loadModelsHint": "La liste reflète Réglages → Models ; les modèles non configurés sont supprimés."
   }
 }

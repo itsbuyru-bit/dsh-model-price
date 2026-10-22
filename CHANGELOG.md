@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-10-22
+
+### Changed
+
+- **Load models from Models** now mirrors the model list configured in
+  **Settings → Models** instead of the adapter's full catalog. Models that are
+  not bound there (or were removed from it) disappear from the price table
+  together with their prices. Providers with an empty model list contribute
+  nothing; the account-scoped DeepSeek provider keeps its account catalog.
+
+[1.4.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.4.0
+
 ## [1.3.1] — 2026-10-22
 
 ### Fixed

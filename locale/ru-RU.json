@@ -100,6 +100,8 @@
     "showBestTimeHint": "Показывает дешёвое окно и обратный отсчёт до него.",
     "bestTime": "Лучшее время",
     "bestTimeNow": "Сейчас Off-Peak, до {time} (местное)",
-    "bestTimeIn": "Off-Peak через {duration} · {start}–{end} по местному"
+    "bestTimeIn": "Off-Peak через {duration} · {start}–{end} по местному",
+    "modelsSynced": "Синхронизировано: {n}",
+    "loadModelsHint": "Список повторяет Настройки → Models; модели, которых там нет, удаляются."
   }
 }

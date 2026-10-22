@@ -100,6 +100,8 @@
     "showBestTimeHint": "Zeigt das Rabattfenster und den Countdown.",
     "bestTime": "Beste Zeit",
     "bestTimeNow": "Jetzt Off-Peak, bis {time} (Ortszeit)",
-    "bestTimeIn": "Off-Peak in {duration} · {start}–{end} Ortszeit"
+    "bestTimeIn": "Off-Peak in {duration} · {start}–{end} Ortszeit",
+    "modelsSynced": "Synchronisiert: {n}",
+    "loadModelsHint": "Die Liste entspricht Einstellungen → Models; nicht konfigurierte Modelle werden entfernt."
   }
 }
