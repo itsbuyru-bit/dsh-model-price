@@ -28,10 +28,12 @@ projection 'modelPrice' (per session, memory)     totals.json (session/event)
 ## Host responsibilities
 
 - **Projection.** `key: 'modelPrice'`, `stateVersion: 1`, identity
-  `stateSchema.parse`; initial state `{ models: {}, missing: 0, last: null }`.
-  `models` is keyed `provider/model`; each entry `{ peak, off }` holds per-tariff
-  counts `{ input, output, cacheRead, cacheWrite }`. Only `assistant/message` is
-  applied.
+  `stateSchema.parse`; initial state `{ models: {}, missing: 0, last: null,
+  requestLog: [], pendingCalls: {} }`. `models` is keyed `provider/model`; each
+  entry `{ peak, off }` holds per-tariff counts
+  `{ input, output, cacheRead, cacheWrite }`. `requestLog` stores successful
+  `web_search` / `web_fetch` calls as `{ kind, time }`, while `pendingCalls` maps
+  a `callId` to its kind until `tool/result` settles it.
 - **Source and usage.** `routeOf` reads `event.data.message.source.{provider,model}`
   (missing `model` skips the event, missing provider becomes `unknown`). `usageOf`
   prefers `event.data.usage`, else scans `event.data.stream` backwards for the last
@@ -44,7 +46,8 @@ projection 'modelPrice' (per session, memory)     totals.json (session/event)
   adding new buckets, so repeated retries of one step replace each other.
 - **All-time totals.** `foldTotals` on `session/event` accumulates into
   `runtime.totals.models`, de-duplicated by a per-session `WeakMap` marker
-  `${turn}:${step}:${key}`; `totals.json` writes are debounced 1.5 s and non-fatal.
+  `${turn}:${step}:${key}`; successful tool calls append to `totals.requestLog`.
+  `totals.json` writes are debounced 1.5 s and non-fatal.
 - **Wallet.** `refreshWallet()` calls `deepseekAccount.getBalance({ version:
   '0.2.1', locale: 'en', timezoneOffsetSeconds })` and accepts only `ready`,
   mapping `value` to `accounts` and `bonusWallets` to `bonuses`; otherwise a finite
@@ -145,6 +148,10 @@ file falls back to defaults; reads never throw.
 | `checkUpdates` | `true` | Automatic 6-hour release check |
 | `showBestTime` | `true` | Best-time block in the popover |
 | `budget` | `null` | Display-only fallback, never enforced |
+| `searchPrice` | `0.75` | USD per 1,000 successful Search calls |
+| `fetchPrice` | `0.75` | USD per 1,000 successful Fetch calls |
+| `requestBillingFrom` | `2026-10-31T16:00:00Z` | Calls before this instant are free |
+| `includeRequests` | `true` | Adds request costs to the displayed totals |
 | `prices` | `{}` | `{ 'provider/model': { currency, peak, off } }` |
 
 ## Security and privacy

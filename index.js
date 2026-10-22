@@ -14,6 +14,7 @@ import {
   normalizePrice,
   num,
   priceOf,
+  requestUsage,
 } from './lib/pricing.js'
 
 export const inject = ['sessionProjections', 'webServer', 'sessions', 'agents']
@@ -45,6 +46,10 @@ const DEFAULTS = {
   checkUpdates: true,
   showBestTime: true,
   budget: null,
+  searchPrice: 0.75,
+  fetchPrice: 0.75,
+  requestBillingFrom: '2026-10-31T16:00:00Z',
+  includeRequests: true,
   prices: {},
 }
 
@@ -123,6 +128,7 @@ export function apply(ctx, rawConfig = {}) {
     updateAt: 0,
     updateBusy: false,
     lastBySession: new WeakMap(),
+    callsBySession: new WeakMap(),
     writeTimer: null,
   }
 
@@ -132,8 +138,42 @@ export function apply(ctx, rawConfig = {}) {
     key: KEY,
     stateVersion: 1,
     stateSchema: { parse: (value) => value },
-    init: () => ({ models: {}, missing: 0, last: null }),
+    init: () => ({
+      models: {},
+      missing: 0,
+      last: null,
+      requestLog: [],
+      pendingCalls: {},
+    }),
     apply: (state, event) => {
+      if (event.type === 'tool/call') {
+        const name = event.data && event.data.name
+        const kind = name === 'web_search' ? 'search' : name === 'web_fetch' ? 'fetch' : null
+        const callId = event.data && event.data.callId
+        if (!kind || !callId) return state
+        return {
+          ...state,
+          pendingCalls: {
+            ...(state.pendingCalls || {}),
+            [callId]: { kind },
+          },
+        }
+      }
+      if (event.type === 'tool/result') {
+        const message = event.data && event.data.message
+        const callId = (message && (message.toolCallId || (message.source && message.source.callId))) || null
+        const pending = state.pendingCalls || {}
+        const entry = callId ? pending[callId] : null
+        if (!entry) return state
+        const nextPending = { ...pending }
+        delete nextPending[callId]
+        if (event.data && event.data.error) return { ...state, pendingCalls: nextPending }
+        return {
+          ...state,
+          pendingCalls: nextPending,
+          requestLog: [...(state.requestLog || []), { kind: entry.kind, time: event.time }],
+        }
+      }
       if (event.type !== 'assistant/message') return state
       const usage = usageOf(event)
       const route = routeOf(event)
@@ -178,7 +218,35 @@ export function apply(ctx, rawConfig = {}) {
   /* -------- durable all-time totals -------- */
 
   const foldTotals = (session, event) => {
-    if (!event || event.type !== 'assistant/message') return
+    if (!event) return
+    if (event.type === 'tool/call') {
+      const name = event.data && event.data.name
+      const kind = name === 'web_search' ? 'search' : name === 'web_fetch' ? 'fetch' : null
+      const callId = event.data && event.data.callId
+      if (!kind || !callId) return
+      let calls = runtime.callsBySession.get(session)
+      if (!calls) {
+        calls = new Map()
+        runtime.callsBySession.set(session, calls)
+      }
+      calls.set(callId, { kind })
+      return
+    }
+    if (event.type === 'tool/result') {
+      const message = event.data && event.data.message
+      const callId = (message && (message.toolCallId || (message.source && message.source.callId))) || null
+      const calls = runtime.callsBySession.get(session)
+      const entry = callId && calls ? calls.get(callId) : null
+      if (!entry) return
+      calls.delete(callId)
+      if (event.data && event.data.error) return
+      const totals = runtime.totals
+      if (!Array.isArray(totals.requestLog)) totals.requestLog = []
+      totals.requestLog.push({ kind: entry.kind, time: event.time })
+      scheduleTotalsWrite()
+      return
+    }
+    if (event.type !== 'assistant/message') return
     const usage = usageOf(event)
     const route = routeOf(event)
     if (!usage || !route) return
@@ -299,11 +367,32 @@ export function apply(ctx, rawConfig = {}) {
   /* -------- spend aggregation -------- */
 
   function emptySpend() {
-    return { total: 0, rows: [], missing: 0 }
+    return {
+      total: 0,
+      rows: [],
+      missing: 0,
+      requests: { searches: 0, fetches: 0, billableSearches: 0, billableFetches: 0, cost: 0 },
+    }
+  }
+
+  function addRequestsToSpend(spend, state, config) {
+    if (!spend.requests) {
+      spend.requests = { searches: 0, fetches: 0, billableSearches: 0, billableFetches: 0, cost: 0 }
+    }
+    const usage = requestUsage(state.requestLog, config)
+    spend.requests.searches += usage.searches
+    spend.requests.fetches += usage.fetches
+    spend.requests.billableSearches += usage.billableSearches
+    spend.requests.billableFetches += usage.billableFetches
+    if (config.includeRequests === false) return
+    const cost = convert(usage.costUsd, 'USD', config.displayCurrency, config.rate)
+    spend.requests.cost += cost
+    spend.total += cost
   }
 
   function addStateToSpend(spend, state, config) {
     if (!state) return
+    addRequestsToSpend(spend, state, config)
     for (const [key, model] of Object.entries(state.models || {})) {
       const [provider, ...rest] = key.split('/')
       const modelName = rest.join('/')
@@ -379,12 +468,21 @@ export function apply(ctx, rawConfig = {}) {
         total: self.total,
         rows: self.rows.sort((a, b) => b.cost - a.cost),
         missing: self.missing,
+        requests: self.requests,
       },
       children: {
         total: children.total,
         count: ids.length,
         rows: children.rows.sort((a, b) => b.cost - a.cost),
         missing: children.missing,
+        requests: children.requests,
+      },
+      requests: {
+        searches: self.requests.searches + children.requests.searches,
+        fetches: self.requests.fetches + children.requests.fetches,
+        billableSearches: self.requests.billableSearches + children.requests.billableSearches,
+        billableFetches: self.requests.billableFetches + children.requests.billableFetches,
+        cost: self.requests.cost + children.requests.cost,
       },
       unpriced: [...self.rows, ...children.rows].filter((r) => !r.priced).map((r) => r.key),
     }
@@ -393,12 +491,17 @@ export function apply(ctx, rawConfig = {}) {
   function allTimeView() {
     const cfg = runtime.config
     const spend = emptySpend()
-    addStateToSpend(spend, { models: runtime.totals.models, missing: 0 }, cfg)
+    addStateToSpend(spend, {
+      models: runtime.totals.models,
+      missing: 0,
+      requestLog: runtime.totals.requestLog,
+    }, cfg)
     return {
       since: runtime.totals.since,
       total: spend.total,
       currency: cfg.displayCurrency,
       rows: spend.rows.sort((a, b) => b.cost - a.cost),
+      requests: spend.requests,
     }
   }
 
@@ -460,6 +563,10 @@ export function apply(ctx, rawConfig = {}) {
       checkUpdates: cfg.checkUpdates,
       showBestTime: cfg.showBestTime,
       budget: cfg.budget,
+      searchPrice: cfg.searchPrice,
+      fetchPrice: cfg.fetchPrice,
+      requestBillingFrom: cfg.requestBillingFrom,
+      includeRequests: cfg.includeRequests,
     }
   }
 
@@ -503,6 +610,19 @@ export function apply(ctx, rawConfig = {}) {
       if (patch.checkUpdates !== undefined) cfg.checkUpdates = Boolean(patch.checkUpdates)
       if (patch.showBestTime !== undefined) cfg.showBestTime = Boolean(patch.showBestTime)
       if (patch.budget !== undefined) cfg.budget = num(patch.budget)
+      if (patch.searchPrice !== undefined) {
+        const price = num(patch.searchPrice)
+        if (price !== null && price >= 0) cfg.searchPrice = price
+      }
+      if (patch.fetchPrice !== undefined) {
+        const price = num(patch.fetchPrice)
+        if (price !== null && price >= 0) cfg.fetchPrice = price
+      }
+      if (patch.requestBillingFrom !== undefined) {
+        const text = String(patch.requestBillingFrom)
+        if (!Number.isNaN(Date.parse(text))) cfg.requestBillingFrom = new Date(text).toISOString()
+      }
+      if (patch.includeRequests !== undefined) cfg.includeRequests = Boolean(patch.includeRequests)
       if (patch.prices && typeof patch.prices === 'object') {
         const cleaned = {}
         for (const [key, row] of Object.entries(patch.prices)) {
@@ -709,6 +829,10 @@ function loadConfig(file) {
     if (typeof config.peakWindows !== 'string') config.peakWindows = DEFAULTS.peakWindows
     if (!Array.isArray(config.peakDays) || config.peakDays.length === 0) config.peakDays = DEFAULTS.peakDays.slice()
     if (!Array.isArray(config.holidays)) config.holidays = []
+    if (!(Number(config.searchPrice) >= 0)) config.searchPrice = DEFAULTS.searchPrice
+    if (!(Number(config.fetchPrice) >= 0)) config.fetchPrice = DEFAULTS.fetchPrice
+    if (Number.isNaN(Date.parse(String(config.requestBillingFrom)))) config.requestBillingFrom = DEFAULTS.requestBillingFrom
+    if (typeof config.includeRequests !== 'boolean') config.includeRequests = DEFAULTS.includeRequests
     config.prices = parsed.prices && typeof parsed.prices === 'object' ? parsed.prices : {}
   } catch {
     /* fall back to defaults */
@@ -717,18 +841,24 @@ function loadConfig(file) {
 }
 
 function loadTotals(file) {
+  const empty = () => ({
+    since: new Date().toISOString(),
+    models: {},
+    requestLog: [],
+  })
   try {
-    if (!existsSync(file)) return { since: new Date().toISOString(), models: {} }
+    if (!existsSync(file)) return empty()
     const parsed = JSON.parse(readFileSync(file, 'utf8'))
     if (!parsed || typeof parsed !== 'object' || typeof parsed.models !== 'object') {
-      return { since: new Date().toISOString(), models: {} }
+      return empty()
     }
     return {
       since: typeof parsed.since === 'string' ? parsed.since : new Date().toISOString(),
       models: parsed.models,
+      requestLog: Array.isArray(parsed.requestLog) ? parsed.requestLog : [],
     }
   } catch {
-    return { since: new Date().toISOString(), models: {} }
+    return empty()
   }
 }
 

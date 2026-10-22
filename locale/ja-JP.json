@@ -107,6 +107,15 @@
     "peakWindowsHint": "カンマ区切りの範囲。例: 01:00-04:00, 06:00-10:00。範囲外はすべてオフピーク。",
     "peakDaysLabel": "ピーク曜日（UTC）",
     "holidaysLabel": "中国の祝日",
-    "holidaysHint": "YYYY-MM-DD をカンマ区切りで。これらの日は終日オフピーク。"
+    "holidaysHint": "YYYY-MM-DD をカンマ区切りで。これらの日は終日オフピーク。",
+    "requestsTitle": "Search & Fetch",
+    "search": "Search",
+    "fetch": "Fetch",
+    "requestsCost": "リクエスト費用",
+    "includeRequestsLabel": "Search と Fetch の呼び出しを集計",
+    "searchPriceLabel": "Search（USD / 1,000 回）",
+    "fetchPriceLabel": "Fetch（USD / 1,000 回）",
+    "billingFromLabel": "課金開始（UTC）",
+    "billingFromHint": "この時刻より前の成功呼び出しは無料。DeepSeek: 2026-10-31 16:00 UTC。"
   }
 }

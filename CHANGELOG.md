@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-10-22
+
+### Added
+
+- Search & Fetch accounting: successful `web_search` / `web_fetch` calls are
+  counted per session and in the all-time totals. Calls are free until
+  2026-10-31 16:00 UTC and cost $0.75 per 1,000 afterwards.
+- Settings for the Search / Fetch price per 1,000, the billing start instant and
+  a toggle that includes request costs in the displayed totals.
+
+[1.6.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.6.0
+
 ## [1.5.0] — 2026-10-22
 
 ### Changed

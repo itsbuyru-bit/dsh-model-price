@@ -101,6 +101,9 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
   files.
 - **Best time** — the popover shows the current or next Off-Peak block in local
   time and a countdown until it starts (or until it ends, when already active).
+- **Search & Fetch costs** — successful `web_search` / `web_fetch` calls are
+  counted and shown separately; they are free until 2026-10-31 16:00 UTC and
+  billed at $0.75 per 1,000 requests afterwards.
 - **Update indicator** — optional check of the latest GitHub release (at most
   once every 6 hours), a **Check now** button and a link to the newer release in
   the About block.
@@ -115,7 +118,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.5.0** |
+| Plugin version | **1.6.0** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -339,7 +342,7 @@ dsh-model-price/
 ├── lib/pricing.js           # Pure pricing helpers (tested, shipped)
 ├── cordis.patch.yml         # Inserts the plugin row
 ├── icon.svg                 # Plugin icon
-├── locale/                  # 9 BCP 47 locale files (102 keys each)
+├── locale/                  # 9 BCP 47 locale files (111 keys each)
 ├── test/pricing.test.mjs    # node:test unit suite
 ├── docs/                    # Architecture, translation guide, images
 ├── site/                    # Static landing page (GitHub Pages)

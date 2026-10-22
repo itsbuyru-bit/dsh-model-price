@@ -39,7 +39,7 @@ The file name must equal the `locale` field inside the file.
 | `meta.description` | One-sentence catalog description; translate it |
 | `strings` | Flat key/value map; the only field the UI reads |
 
-`strings` currently holds 102 keys. The Host serves the whole dictionary and the
+`strings` currently holds 111 keys. The Host serves the whole dictionary and the
 Client resolves each key independently.
 
 ## Rules
@@ -115,5 +115,5 @@ runtime, not in CI.
 | `de-DE.json` | Deutsch | German |
 | `fr-FR.json` | Français | French |
 
-All nine files carry the same 102 keys. Add a row to this table when adding a
+All nine files carry the same 111 keys. Add a row to this table when adding a
 language.

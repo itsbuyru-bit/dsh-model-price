@@ -107,6 +107,15 @@
     "peakWindowsHint": "Диапазоны через запятую, например 01:00-04:00, 06:00-10:00. Всё вне них — Off-Peak.",
     "peakDaysLabel": "Пиковые дни (UTC)",
     "holidaysLabel": "Праздники Китая",
-    "holidaysHint": "YYYY-MM-DD через запятую. В эти даты действует только Off-Peak."
+    "holidaysHint": "YYYY-MM-DD через запятую. В эти даты действует только Off-Peak.",
+    "requestsTitle": "Search и Fetch",
+    "search": "Search",
+    "fetch": "Fetch",
+    "requestsCost": "Стоимость запросов",
+    "includeRequestsLabel": "Учитывать вызовы Search и Fetch",
+    "searchPriceLabel": "Search, USD / 1000",
+    "fetchPriceLabel": "Fetch, USD / 1000",
+    "billingFromLabel": "Начало биллинга (UTC)",
+    "billingFromHint": "Успешные вызовы до этого момента бесплатны. У DeepSeek: 31.10.2026 16:00 UTC."
   }
 }

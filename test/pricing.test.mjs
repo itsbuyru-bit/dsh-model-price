@@ -9,6 +9,7 @@ import {
   modelId,
   normalizePrice,
   priceOf,
+  requestUsage,
 } from '../lib/pricing.js'
 
 test('costOf prices each bucket per million tokens', () => {
@@ -112,6 +113,26 @@ test('configuredSetup keeps empty providers and extracts explicit model lists', 
   assert.deepEqual(configured.get('acme'), ['acme-large', 'acme-small'])
   assert.deepEqual(configured.get('deepseek'), ['deepseek-flash', 'deepseek-v4-pro'])
   assert.deepEqual(defaults, { provider: 'deepseek-account', model: 'deepseek-flash' })
+})
+
+test('requestUsage separates free and billable Search/Fetch calls', () => {
+  const config = {
+    requestBillingFrom: '2026-10-31T16:00:00Z',
+    searchPrice: 0.75,
+    fetchPrice: 0.75,
+  }
+  const before = Date.parse('2026-10-31T15:59:00Z')
+  const after = Date.parse('2026-10-31T16:00:01Z')
+  const usage = requestUsage([
+    { kind: 'search', time: before },
+    { kind: 'fetch', time: before },
+    { kind: 'fetch', time: after },
+  ], config)
+  assert.equal(usage.searches, 1)
+  assert.equal(usage.fetches, 2)
+  assert.equal(usage.billableSearches, 0)
+  assert.equal(usage.billableFetches, 1)
+  assert.ok(Math.abs(usage.costUsd - 0.00075) < 1e-12)
 })
 
 test('modelId accepts strings and objects only', () => {

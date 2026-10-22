@@ -107,6 +107,15 @@
     "peakWindowsHint": "用逗号分隔的区间，例如 01:00-04:00, 06:00-10:00。区间之外均为低谷。",
     "peakDaysLabel": "高峰日（UTC）",
     "holidaysLabel": "中国法定节假日",
-    "holidaysHint": "YYYY-MM-DD，用逗号分隔。这些日期全天按低谷计费。"
+    "holidaysHint": "YYYY-MM-DD，用逗号分隔。这些日期全天按低谷计费。",
+    "requestsTitle": "Search 与 Fetch",
+    "search": "Search",
+    "fetch": "Fetch",
+    "requestsCost": "请求费用",
+    "includeRequestsLabel": "统计 Search 和 Fetch 调用",
+    "searchPriceLabel": "Search，美元/千次",
+    "fetchPriceLabel": "Fetch，美元/千次",
+    "billingFromLabel": "计费开始时间（UTC）",
+    "billingFromHint": "此时间之前的成功调用免费。DeepSeek：2026-10-31 16:00 UTC。"
   }
 }

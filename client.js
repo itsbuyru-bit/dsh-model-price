@@ -542,6 +542,21 @@ window.__ModuleLoader__.load({
         h(ModelTable, { key: 'mt', rows: session.self.rows, t: t, currency: session.currency }),
         session.self.missing > 0 ? h('div', { className: 'mp-muted', key: 'miss' }, t('missing') + ': ' + session.self.missing) : null,
         session.unpriced.length > 0 ? h('div', { className: 'mp-warn', key: 'unp' }, t('unpriced') + ': ' + session.unpriced.join(', ')) : null,
+        (session.requests && (session.requests.searches + session.requests.fetches) > 0) ? h('div', { key: 'req' }, [
+          h('div', { className: 'mp-section', key: 'h' }, t('requestsTitle')),
+          h('div', { className: 'mp-row', key: 's' }, [
+            h('span', { className: 'l', key: 'l' }, t('search')),
+            h('span', { className: 'v', key: 'v' }, String(session.requests.searches)),
+          ]),
+          h('div', { className: 'mp-row', key: 'f' }, [
+            h('span', { className: 'l', key: 'l' }, t('fetch')),
+            h('span', { className: 'v', key: 'v' }, String(session.requests.fetches)),
+          ]),
+          h('div', { className: 'mp-row', key: 'c' }, [
+            h('span', { className: 'l', key: 'l' }, t('requestsCost')),
+            h('span', { className: 'v', key: 'v' }, money(session.requests.cost, session.currency)),
+          ]),
+        ]) : null,
         h('div', { className: 'mp-hr', key: 'hr2' }),
         h('div', { className: 'mp-row', key: 'at' }, [
           h('span', { className: 'l', key: 'l' }, t('allTime') + ' (' + t('since') + ' ' + day(state.allTime.since, lang) + ')'),
@@ -786,6 +801,10 @@ window.__ModuleLoader__.load({
             checkUpdates: value.config.checkUpdates !== false,
             showBestTime: value.config.showBestTime !== false,
             budget: value.config.budget === null || value.config.budget === undefined ? '' : String(value.config.budget),
+            includeRequests: value.config.includeRequests !== false,
+            searchPrice: String(value.config.searchPrice),
+            fetchPrice: String(value.config.fetchPrice),
+            requestBillingFrom: value.config.requestBillingFrom,
           })
           var keys = value.models.slice()
           setRows(keys.map(function (key) { return normalizeRow(key, value.config.prices[key]) }))
@@ -884,6 +903,10 @@ window.__ModuleLoader__.load({
           checkUpdates: draft.checkUpdates,
           showBestTime: draft.showBestTime,
           budget: draft.budget === '' ? null : draft.budget,
+          includeRequests: draft.includeRequests,
+          searchPrice: draft.searchPrice,
+          fetchPrice: draft.fetchPrice,
+          requestBillingFrom: draft.requestBillingFrom,
         }).then(function (value) {
           setDisplayStatus('saved')
           setLoaded(value)
@@ -1056,6 +1079,43 @@ window.__ModuleLoader__.load({
               },
             }),
             h('span', { className: 'hint', key: 'h' }, t('holidaysHint')),
+          ]),
+          h('h3', { key: 'reqh', style: { marginTop: 18 } }, t('requestsTitle')),
+          h('div', { className: 'mp-field', key: 'reqcb' }, [
+            h('label', {
+              key: 'cb',
+              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
+            }, [
+              h('input', {
+                key: 'i', type: 'checkbox', checked: draft.includeRequests,
+                onChange: function (event) { field('includeRequests', event.target.checked) },
+              }),
+              h('span', { key: 's' }, t('includeRequestsLabel')),
+            ]),
+          ]),
+          h('div', { className: 'mp-grid', key: 'reqp', style: { marginTop: 8 } }, [
+            h('div', { className: 'mp-field', key: 'sp' }, [
+              h('label', { key: 'l' }, t('searchPriceLabel')),
+              h('input', {
+                key: 'i', className: 'mp-in', inputMode: 'decimal', value: draft.searchPrice,
+                onChange: function (event) { field('searchPrice', event.target.value) },
+              }),
+            ]),
+            h('div', { className: 'mp-field', key: 'fp' }, [
+              h('label', { key: 'l' }, t('fetchPriceLabel')),
+              h('input', {
+                key: 'i', className: 'mp-in', inputMode: 'decimal', value: draft.fetchPrice,
+                onChange: function (event) { field('fetchPrice', event.target.value) },
+              }),
+            ]),
+          ]),
+          h('div', { className: 'mp-field', key: 'reqfrom', style: { marginTop: 8 } }, [
+            h('label', { key: 'l' }, t('billingFromLabel')),
+            h('input', {
+              key: 'i', className: 'mp-in', value: draft.requestBillingFrom,
+              onChange: function (event) { field('requestBillingFrom', event.target.value) },
+            }),
+            h('span', { className: 'hint', key: 'h' }, t('billingFromHint')),
           ]),
           h('div', { className: 'mp-field', key: 'besttime', style: { marginTop: 10 } }, [
             h('label', {

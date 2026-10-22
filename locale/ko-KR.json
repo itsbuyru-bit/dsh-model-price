@@ -107,6 +107,15 @@
     "peakWindowsHint": "쉼표로 구분한 범위입니다. 예: 01:00-04:00, 06:00-10:00. 범위 밖은 모두 오프피크입니다.",
     "peakDaysLabel": "피크 요일 (UTC)",
     "holidaysLabel": "중국 공휴일",
-    "holidaysHint": "YYYY-MM-DD, 쉼표로 구분. 해당 날짜는 종일 오프피크입니다."
+    "holidaysHint": "YYYY-MM-DD, 쉼표로 구분. 해당 날짜는 종일 오프피크입니다.",
+    "requestsTitle": "Search & Fetch",
+    "search": "Search",
+    "fetch": "Fetch",
+    "requestsCost": "요청 비용",
+    "includeRequestsLabel": "Search 및 Fetch 호출 집계",
+    "searchPriceLabel": "Search, USD / 1,000회",
+    "fetchPriceLabel": "Fetch, USD / 1,000회",
+    "billingFromLabel": "과금 시작 (UTC)",
+    "billingFromHint": "이 시각 이전의 성공 호출은 무료입니다. DeepSeek: 2026-10-31 16:00 UTC."
   }
 }

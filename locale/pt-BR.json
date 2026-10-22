@@ -107,6 +107,15 @@
     "peakWindowsHint": "Intervalos separados por vírgula, por exemplo 01:00-04:00, 06:00-10:00. Fora deles tudo é Off-Peak.",
     "peakDaysLabel": "Dias de pico (UTC)",
     "holidaysLabel": "Feriados chineses",
-    "holidaysHint": "YYYY-MM-DD separados por vírgula. Essas datas são Off-Peak o dia inteiro."
+    "holidaysHint": "YYYY-MM-DD separados por vírgula. Essas datas são Off-Peak o dia inteiro.",
+    "requestsTitle": "Search e Fetch",
+    "search": "Search",
+    "fetch": "Fetch",
+    "requestsCost": "Custo de requisições",
+    "includeRequestsLabel": "Contar chamadas de Search e Fetch",
+    "searchPriceLabel": "Search, USD / 1.000",
+    "fetchPriceLabel": "Fetch, USD / 1.000",
+    "billingFromLabel": "Início da cobrança (UTC)",
+    "billingFromHint": "Chamadas bem-sucedidas antes deste momento são grátis. DeepSeek: 2026-10-31 16:00 UTC."
   }
 }

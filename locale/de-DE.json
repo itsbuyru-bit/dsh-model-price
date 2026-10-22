@@ -107,6 +107,15 @@
     "peakWindowsHint": "Kommagetrennte Bereiche, z. B. 01:00-04:00, 06:00-10:00. Außerhalb davon gilt Off-Peak.",
     "peakDaysLabel": "Peak-Tage (UTC)",
     "holidaysLabel": "Chinesische Feiertage",
-    "holidaysHint": "YYYY-MM-DD, kommagetrennt. An diesen Tagen gilt durchgehend Off-Peak."
+    "holidaysHint": "YYYY-MM-DD, kommagetrennt. An diesen Tagen gilt durchgehend Off-Peak.",
+    "requestsTitle": "Search & Fetch",
+    "search": "Search",
+    "fetch": "Fetch",
+    "requestsCost": "Anfragekosten",
+    "includeRequestsLabel": "Search- und Fetch-Aufrufe zählen",
+    "searchPriceLabel": "Search, USD / 1.000",
+    "fetchPriceLabel": "Fetch, USD / 1.000",
+    "billingFromLabel": "Abrechnung beginnt (UTC)",
+    "billingFromHint": "Erfolgreiche Aufrufe vor diesem Zeitpunkt sind kostenlos. DeepSeek: 2026-10-31 16:00 UTC."
   }
 }
