@@ -21,7 +21,4 @@ jobs:
       - name: Unit tests
         run: npm test
       - name: Lint workflows
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash -o /tmp/actionlint.sh
-          bash /tmp/actionlint.sh
-          ./actionlint -color
+        uses: raven-actions/actionlint@v2
