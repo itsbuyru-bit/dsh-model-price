@@ -26,6 +26,10 @@
 ## Скриншоты
 
 <p align="center">
+  <a href="docs/images/composer-line.png"><img src="docs/images/composer-line.png" width="620" alt="Строка под вводом: расход сессии, кошелёк и бейдж Peak"></a>
+</p>
+
+<p align="center">
   <a href="docs/images/popover.png"><img src="docs/images/popover.png" width="680" alt="Поповер: лучшее время, кошелёк, токены сессии и стоимость по модели"></a>
 </p>
 
@@ -110,7 +114,7 @@ DeepSeek Harness показывает расход токенов по шага�
 | DeepSeek Harness | **0.2.x** — проверено на **0.2.1-rc.2** (Desktop, Windows) |
 | Профиль | `desktop` (Web/Desktop); любой профиль с Web UI |
 | Node.js | встроенный в DSH, **22.5+** |
-| Версия плагина | **1.4.0** |
+| Версия плагина | **1.4.1** |
 
 Жёсткой привязки к версии нет. Если в будущем переименуют слот, ключ проекции
 или сервис, соответствующая часть просто не отрисуется — страница не упадёт, а
@@ -291,6 +295,8 @@ Host перечитывает `locale/` при каждом запросе: по
 **Настройки → Модели и цены** (секция делает ре-скан) или обновите страницу.
 Отсутствующие ключи берутся из `en-US`, затем показывается имя ключа.
 
+Полный гайд: [docs/TRANSLATION.md](docs/TRANSLATION.md).
+
 ---
 
 ## Данные и приватность
@@ -310,17 +316,35 @@ Host перечитывает `locale/` при каждом запросе: по
 
 ---
 
+## Сайт проекта
+
+Статическая страница лежит в [`site/`](site/): тёмный hero, скриншоты, блок
+возможностей, команда установки и переключатель RU/EN. Публикуется через
+GitHub Pages:
+
+**https://itsbuyru-bit.github.io/dsh-model-price/**
+
+Деплой идёт через `.github/workflows/pages.yml`; включите один раз
+**Settings → Pages → Source → GitHub Actions**, после чего каждый push в `main`
+публикует `site/`.
+
+---
+
 ## Структура проекта
 
 ```text
 dsh-model-price/
 ├── index.js                 # Host: проекция, кошелёк, API цен
 ├── client.js                # Client: строка, поповер, настройки
+├── lib/pricing.js           # Чистые функции цен (с тестами, в пакете)
 ├── cordis.patch.yml         # Вставляет строку плагина
 ├── icon.svg                 # Иконка плагина
-├── locale/                  # 9 файлов BCP 47 (по 83 ключа)
+├── locale/                  # 9 файлов BCP 47 (по 97 ключей)
+├── test/pricing.test.mjs    # Юнит-тесты node:test
+├── docs/                    # Архитектура, гайд по переводу, картинки
+├── site/                    # Статический сайт (GitHub Pages)
 ├── scripts/check.mjs        # Манифест, синтаксис и паритет локалей
-├── .github/workflows/ci.yml # CI: node scripts/check.mjs
+├── .github/workflows/       # ci.yml, pages.yml, release.yml
 ├── README.md                # Английский
 ├── README.ru.md             # Русский
 ├── CHANGELOG.md
@@ -338,12 +362,18 @@ dsh-model-price/
 
 ```sh
 node scripts/check.mjs
+node --test test/pricing.test.mjs
 ```
 
-Проверка валидирует манифест, запускает `node --check` для обеих половин и
-сверяет каждую локаль с `en-US.json`: тег файла, поле `locale`, набор ключей,
-пустые значения и сохранность `{placeholder}`. CI запускает ту же команду на
-каждый push и pull request.
+Проверка валидирует манифест, запускает `node --check` для Host, Client и
+`lib/pricing.js`, сверяет каждую локаль с `en-US.json`: тег файла, поле
+`locale`, набор ключей, пустые значения и сохранность `{placeholder}`.
+
+Юнит-тесты покрывают чистый слой цен: стоимость за миллион токенов, фолбэки
+cache-hit и cache-write, математику окна Off-Peak (включая переход через
+полночь UTC), конвертацию валют, сравнение релизов и извлечение списка моделей,
+привязанных в **Настройки → Models**. CI запускает обе команды на каждый push и
+pull request.
 
 ---
 

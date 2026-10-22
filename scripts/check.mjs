@@ -33,12 +33,14 @@ check(Boolean(pkg.repository && pkg.repository.url), 'repository is set')
 check(Boolean(pkg.dsh && pkg.dsh.bundle && pkg.dsh.bundle.patch), 'dsh.bundle.patch is set')
 check(Boolean(pkg.dsh && pkg.dsh.client && pkg.dsh.client.platform === 'web'), 'dsh.client.platform is web')
 check(Array.isArray(pkg.files) && pkg.files.includes('client.js'), 'files list ships the client half')
+check(Array.isArray(pkg.files) && pkg.files.includes('lib/*.js'), 'files list ships the lib modules')
+check(/^[<>=^~ ]*\d+\.\d+\.\d+/.test((pkg.engines && pkg.engines.dsh) || ''), 'engines.dsh declares the Harness range')
 
-for (const file of ['index.js', 'client.js', 'cordis.patch.yml', 'icon.svg', 'README.md', 'README.ru.md', 'LICENSE', 'CHANGELOG.md']) {
+for (const file of ['index.js', 'client.js', 'lib/pricing.js', 'cordis.patch.yml', 'icon.svg', 'README.md', 'README.ru.md', 'LICENSE', 'CHANGELOG.md']) {
   check(existsSync(join(root, file)), `file exists: ${file}`)
 }
 
-for (const file of ['index.js', 'client.js']) {
+for (const file of ['index.js', 'client.js', 'lib/pricing.js']) {
   const result = spawnSync(process.execPath, ['--check', join(root, file)], { encoding: 'utf8' })
   check(result.status === 0, `syntax: ${file}${result.stderr ? ` — ${result.stderr.trim()}` : ''}`)
 }

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0d10">
+  <title>dsh-model-price — per-model API prices for DeepSeek Harness</title>
+  <meta name="description" content="A DeepSeek Harness plugin for per-model API prices in USD or CNY, wallet balance and live session spend under the composer. Local data, manual FX, MIT.">
+  <link rel="canonical" href="https://itsbuyru-bit.github.io/dsh-model-price/">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="alternate" hreflang="en" href="https://itsbuyru-bit.github.io/dsh-model-price/">
+  <link rel="alternate" hreflang="ru" href="https://itsbuyru-bit.github.io/dsh-model-price/ru/">
+  <link rel="alternate" hreflang="x-default" href="https://itsbuyru-bit.github.io/dsh-model-price/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="dsh-model-price">
+  <meta property="og:title" content="dsh-model-price — know what every token costs">
+  <meta property="og:description" content="Per-model API prices in USD or CNY, wallet balance and live session spend under the composer. A plugin for DeepSeek Harness, built on the session log you already have.">
+  <meta property="og:url" content="https://itsbuyru-bit.github.io/dsh-model-price/">
+  <meta property="og:image" content="https://itsbuyru-bit.github.io/dsh-model-price/assets/social-preview.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="dsh-model-price: per-model API prices, wallet balance and live session spend for DeepSeek Harness.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="ru_RU">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="dsh-model-price — know what every token costs">
+  <meta name="twitter:description" content="Per-model API prices in USD or CNY, wallet balance and live session spend under the composer. A plugin for DeepSeek Harness.">
+  <meta name="twitter:image" content="https://itsbuyru-bit.github.io/dsh-model-price/assets/social-preview.png">
+  <meta name="twitter:image:alt" content="dsh-model-price: per-model API prices, wallet balance and live session spend for DeepSeek Harness.">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="index.html">
+        <img src="assets/icon.svg" width="28" height="28" alt="">
+        <span>dsh-model-price</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation" data-open-label="Open navigation" data-close-label="Close navigation">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+      <nav class="nav-panel" id="site-nav" aria-label="Primary">
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#screenshots">Screenshots</a></li>
+          <li><a href="#install">Install</a></li>
+          <li><a href="https://github.com/itsbuyru-bit/dsh-model-price">GitHub</a></li>
+        </ul>
+        <div class="lang-switch" role="group" aria-label="Language">
+          <a href="index.html" lang="en" aria-current="page">EN</a>
+          <span aria-hidden="true">/</span>
+          <a href="ru/" lang="ru" hreflang="ru">RU</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero-inner">
+        <p class="badge"><span class="badge-dot" aria-hidden="true"></span>DeepSeek Harness plugin</p>
+        <h1 id="hero-title">Know what every token costs.</h1>
+        <p class="hero-sub">Per-model API prices in USD or CNY, your wallet balance and live session spend — one quiet line under the composer, priced from the session log you already have.</p>
+
+        <div class="install-card" id="install">
+          <div class="install-head">
+            <span class="install-label">Install from GitHub</span>
+            <span class="install-meta">plugin spec</span>
+          </div>
+          <div class="install-row">
+            <span class="install-prompt" aria-hidden="true">$</span>
+            <code class="install-command" id="install-command">github:itsbuyru-bit/dsh-model-price</code>
+            <button class="copy-btn" type="button" data-copy="install-command" data-copy-label="Copy" data-copied-label="Copied" data-copy-failed-label="The copy command was blocked. Select the command and press Ctrl+C." aria-label="Copy install command">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <rect x="9" y="9" width="11" height="11" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+          <p class="install-help">Paste it in <strong>Settings → Plugins → Add plugin</strong>, then restart DeepSeek Harness and refresh the page. There is no npm package.</p>
+          <span class="copy-status" role="status" aria-live="polite"></span>
+        </div>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/itsbuyru-bit/dsh-model-price#quick-start">
+            Add to Harness
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+          <a class="btn btn-secondary" href="https://github.com/itsbuyru-bit/dsh-model-price">GitHub</a>
+        </div>
+
+        <figure class="hero-strip">
+          <div class="strip-frame">
+            <img src="assets/composer-line.png" width="628" height="32" alt="Composer line showing token throughput, cache hit rate, session cost with a Peak badge, wallet balance and a live indicator." decoding="async">
+          </div>
+          <figcaption>The composer line: live session cost, wallet balance and the current Peak / Off-Peak tariff.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="screenshots" aria-labelledby="screenshots-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">Screenshots</p>
+          <h2 id="screenshots-title">Every number, one click deep.</h2>
+          <p class="lede">The line stays quiet until you need it. Open the popover for token composition, per-model cost, the wallet split and your all-time total — then set the rates that produce them.</p>
+        </div>
+
+        <div class="shots">
+          <figure class="shot shot-wide reveal">
+            <a class="shot-link" href="assets/popover.png" target="_blank" rel="noopener">
+              <img src="assets/popover.png" width="1020" height="556" alt="Spend popover with best time, wallet balance and bonus, session token composition, per-model cost and the all-time total." loading="lazy" decoding="async">
+              <span class="sr-only">Opens the full-size screenshot in a new tab.</span>
+            </a>
+            <figcaption>
+              <span class="shot-title">Spend popover</span>
+              <span class="shot-desc">Token composition, cost per model, the wallet split and the all-time counter. Price edits recalculate the visible history.</span>
+              <span class="shot-action">View full size</span>
+            </figcaption>
+          </figure>
+
+          <figure class="shot reveal">
+            <a class="shot-link" href="assets/settings-display.png" target="_blank" rel="noopener">
+              <img src="assets/settings-display.png" width="806" height="809" alt="Settings — Display: display currency, manual FX rate, local budget fallback, Off-Peak window, language and visibility toggles." loading="lazy" decoding="async">
+              <span class="sr-only">Opens the full-size screenshot in a new tab.</span>
+            </a>
+            <figcaption>
+              <span class="shot-title">Settings — Display</span>
+              <span class="shot-desc">Display currency, manual rate, local budget fallback, the UTC Off-Peak window and the plugin language.</span>
+              <span class="shot-action">View full size</span>
+            </figcaption>
+          </figure>
+
+          <figure class="shot reveal">
+            <a class="shot-link" href="assets/settings-models.png" target="_blank" rel="noopener">
+              <img src="assets/settings-models.png" width="810" height="809" alt="Settings — Models: imported model rows with USD prices, Add / Remove controls and the About block with the update check." loading="lazy" decoding="async">
+              <span class="sr-only">Opens the full-size screenshot in a new tab.</span>
+            </a>
+            <figcaption>
+              <span class="shot-title">Settings — Models</span>
+              <span class="shot-desc">Mirror the models bound in Settings → Models, then enter input, output, cache-hit and cache-write prices per 1M tokens.</span>
+              <span class="shot-action">View full size</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">Features</p>
+          <h2 id="features-title">Pricing that matches how you actually pay.</h2>
+          <p class="lede">Built from the durable session log. Nothing is estimated, nothing is rewritten and nothing blocks a request.</p>
+        </div>
+
+        <div class="features-grid">
+          <article class="card reveal">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/>
+                <path d="m3 12 9 4.5 9-4.5"/>
+                <path d="m3 16.5 9 4.5 9-4.5"/>
+              </svg>
+            </div>
+            <h3>Per-model pricing, Peak and Off-Peak</h3>
+            <p>Input, output, cache hit and cache write, each with a Peak and an Off-Peak rate. An editable UTC window picks the column — DeepSeek’s default is 16:30–00:30.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M4 8h13l-3-3"/>
+                <path d="M20 16H7l3 3"/>
+              </svg>
+            </div>
+            <h3>Two currencies, one manual rate</h3>
+            <p>Enter prices in USD or CNY, display in either and convert with a manual FX rate stored in your settings. No exchange-rate service is ever called.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6.5A2.5 2.5 0 0 1 4 16.5v-9Z"/>
+                <path d="M4 9h16"/>
+                <circle cx="16" cy="13.5" r="1"/>
+              </svg>
+            </div>
+            <h3>Wallet with bonus wallets</h3>
+            <p>The real DeepSeek account balance plus bonus wallets, split in the popover. When the account is unavailable, a local budget can stand in.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M3 12h4l2-6 4 12 2-6h6"/>
+              </svg>
+            </div>
+            <h3>Live session cost</h3>
+            <p>Updates while the model works. Retried steps are de-duplicated, aborted steps without usage are reported rather than guessed, and unpriced models show <code>?</code>.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+                <path d="M21 3v6h-6"/>
+              </svg>
+            </div>
+            <h3>Sync from Settings → Models</h3>
+            <p>One click mirrors the models bound in Settings → Models. A provider with an empty list contributes nothing, and a model removed there leaves the price table with its prices.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M3 12h18"/>
+                <path d="M12 3c2.5 2.4 4 5.6 4 9s-1.5 6.6-4 9c-2.5-2.4-4-5.6-4-9s1.5-6.6 4-9Z"/>
+              </svg>
+            </div>
+            <h3>Nine languages</h3>
+            <p>English, Russian, Chinese, Japanese, Korean, Spanish, Portuguese, German and French — discovered from locale files and switchable independently of Harness.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-it-works" aria-labelledby="how-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">Three steps from install to insight.</h2>
+        </div>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-num" aria-hidden="true">01</span>
+            <h3>Add your models</h3>
+            <p>Open <strong>Settings → Models &amp; prices</strong> and press <strong>Load models from Models</strong>, or add a provider and model id by hand.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num" aria-hidden="true">02</span>
+            <h3>Set your prices</h3>
+            <p>Expand a row and fill the input, output, cache-hit and cache-write prices per million tokens for Peak and Off-Peak, then press <strong>Apply</strong>.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num" aria-hidden="true">03</span>
+            <h3>Read the line</h3>
+            <p>Session cost, wallet and the current tariff sit under the composer. Click the line for tokens, per-model cost and the all-time total.</p>
+          </li>
+        </ol>
+
+        <aside class="privacy reveal" aria-labelledby="privacy-title">
+          <div class="privacy-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <rect x="5" y="10" width="14" height="10" rx="2"/>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+            </svg>
+          </div>
+          <div class="privacy-copy">
+            <h3 id="privacy-title">Your usage stays local</h3>
+            <p>Everything the plugin writes lives in <code>~/.dsh/api-spend/</code>: prices, currency, FX rate and token totals. Session usage is read through a Harness projection and never modified. The only outbound calls are the account balance made by Harness itself and the optional update check — which you can switch off. No analytics, no telemetry.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="languages" aria-labelledby="languages-title">
+      <div class="container">
+        <div class="lang-layout">
+          <div class="lang-copy reveal">
+            <p class="eyebrow">Languages</p>
+            <h2 id="languages-title">Nine locales, one plugin.</h2>
+            <p class="lede">The plugin language is independent of Harness and can be overridden per plugin. Missing keys fall back to English, key by key.</p>
+            <a class="text-link" href="https://github.com/itsbuyru-bit/dsh-model-price/blob/main/docs/TRANSLATION.md">
+              Read the translation guide on GitHub
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M7 17 17 7M9 7h8v8"/>
+              </svg>
+            </a>
+          </div>
+          <ul class="chips reveal" aria-label="Bundled locales">
+            <li class="chip"><span class="chip-code">en-US</span><span class="chip-name">English</span></li>
+            <li class="chip"><span class="chip-code">ru-RU</span><span class="chip-name">Русский</span></li>
+            <li class="chip"><span class="chip-code">zh-CN</span><span class="chip-name">简体中文</span></li>
+            <li class="chip"><span class="chip-code">ja-JP</span><span class="chip-name">日本語</span></li>
+            <li class="chip"><span class="chip-code">ko-KR</span><span class="chip-name">한국어</span></li>
+            <li class="chip"><span class="chip-code">es-ES</span><span class="chip-name">Español</span></li>
+            <li class="chip"><span class="chip-code">pt-BR</span><span class="chip-name">Português (Brasil)</span></li>
+            <li class="chip"><span class="chip-code">de-DE</span><span class="chip-name">Deutsch</span></li>
+            <li class="chip"><span class="chip-code">fr-FR</span><span class="chip-name">Français</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="index.html">
+            <img src="assets/icon.svg" width="28" height="28" alt="">
+            <span>dsh-model-price</span>
+          </a>
+          <p>Per-model API prices, wallet balance and live session spend for DeepSeek Harness.</p>
+        </div>
+        <nav class="footer-col" aria-labelledby="footer-project">
+          <h2 id="footer-project">Project</h2>
+          <ul>
+            <li><a href="https://github.com/itsbuyru-bit/dsh-model-price">GitHub</a></li>
+            <li><a href="https://github.com/itsbuyru-bit/dsh-model-price/releases">Releases</a></li>
+            <li><a href="https://github.com/itsbuyru-bit/dsh-model-price/issues">Issues</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-labelledby="footer-docs">
+          <h2 id="footer-docs">Documentation</h2>
+          <ul>
+            <li><a href="https://github.com/itsbuyru-bit/dsh-model-price/blob/main/README.md" lang="en" hreflang="en">README (EN)</a></li>
+            <li><a href="https://github.com/itsbuyru-bit/dsh-model-price/blob/main/README.ru.md" lang="ru" hreflang="ru">README (RU)</a></li>
+            <li><a href="https://github.com/itsbuyru-bit/dsh-model-price/blob/main/docs/TRANSLATION.md">Translation guide</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>MIT © 2026 Aleksey Zakurdaev</p>
+        <p>Unofficial project — not affiliated with DeepSeek.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

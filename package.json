@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-price",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Per-model API prices in USD or CNY, wallet balance and live session spend for DeepSeek Harness.",
   "keywords": [
     "deepseek",
@@ -32,6 +32,7 @@
   "files": [
     "index.js",
     "client.js",
+    "lib/*.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
@@ -42,10 +43,11 @@
   ],
   "scripts": {
     "check": "node scripts/check.mjs",
-    "test": "node scripts/check.mjs"
+    "test": "node --test test/pricing.test.mjs"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.5.0",
+    "dsh": ">=0.2.0"
   },
   "repository": {
     "type": "git",

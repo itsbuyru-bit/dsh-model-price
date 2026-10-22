@@ -18,3 +18,10 @@ jobs:
           node-version: 22
       - name: Validate manifest, syntax and locales
         run: node scripts/check.mjs
+      - name: Unit tests
+        run: npm test
+      - name: Lint workflows
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash -o /tmp/actionlint.sh
+          bash /tmp/actionlint.sh
+          ./actionlint -color

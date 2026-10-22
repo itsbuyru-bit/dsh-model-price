@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] — 2026-10-22
+
+### Added
+
+- Unit test suite for the pricing layer (`test/pricing.test.mjs`), run in CI.
+- Static project website in `site/` with a GitHub Pages workflow.
+- `docs/ARCHITECTURE.md` and `docs/TRANSLATION.md`.
+- Social preview and composer-line images in `docs/images/`.
+
+### Changed
+
+- Pure pricing helpers moved to `lib/pricing.js` and shipped with the package.
+- `engines.dsh` (`>=0.2.0`), Dependabot for Actions and actionlint in CI.
+
+[1.4.1]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.4.1
+
 ## [1.4.0] — 2026-10-22
 
 ### Changed

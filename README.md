@@ -26,6 +26,10 @@ session logs, and keeps all of its data in `~/.dsh/api-spend/`.
 ## Screenshots
 
 <p align="center">
+  <a href="docs/images/composer-line.png"><img src="docs/images/composer-line.png" width="620" alt="Composer line: session spend, wallet balance and Peak badge"></a>
+</p>
+
+<p align="center">
   <a href="docs/images/popover.png"><img src="docs/images/popover.png" width="680" alt="Spend popover: best time, wallet, session tokens and per-model cost"></a>
 </p>
 
@@ -111,7 +115,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.4.0** |
+| Plugin version | **1.4.1** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -292,6 +296,8 @@ The Host rescans `locale/` on every request: drop the file in, open
 **Settings → Models & prices** (the section forces a re-scan) or refresh the
 page. Missing keys fall back to `en-US`, then to the key name.
 
+Full guide: [docs/TRANSLATION.md](docs/TRANSLATION.md).
+
 ---
 
 ## Data and privacy
@@ -311,17 +317,34 @@ FX rate is manual by design.
 
 ---
 
+## Project website
+
+A static landing page lives in [`site/`](site/): dark hero, screenshots, feature
+grid, install command and an EN/RU switch. It is published with GitHub Pages:
+
+**https://itsbuyru-bit.github.io/dsh-model-price/**
+
+Deployment uses `.github/workflows/pages.yml`; enable it once in
+**Settings → Pages → Source → GitHub Actions**, then every push to `main`
+publishes `site/`.
+
+---
+
 ## Project structure
 
 ```text
 dsh-model-price/
 ├── index.js                 # Host half: projection, wallet, pricing API
 ├── client.js                # Client half: composer line, popover, settings
+├── lib/pricing.js           # Pure pricing helpers (tested, shipped)
 ├── cordis.patch.yml         # Inserts the plugin row
 ├── icon.svg                 # Plugin icon
-├── locale/                  # 9 BCP 47 locale files (83 keys each)
+├── locale/                  # 9 BCP 47 locale files (97 keys each)
+├── test/pricing.test.mjs    # node:test unit suite
+├── docs/                    # Architecture, translation guide, images
+├── site/                    # Static landing page (GitHub Pages)
 ├── scripts/check.mjs        # Manifest, syntax and locale-parity checks
-├── .github/workflows/ci.yml # CI: node scripts/check.mjs
+├── .github/workflows/       # ci.yml, pages.yml, release.yml
 ├── README.md                # English
 ├── README.ru.md             # Russian
 ├── CHANGELOG.md
@@ -333,18 +356,27 @@ dsh-model-price/
 └── package.json
 ```
 
+Further reading: [architecture](docs/ARCHITECTURE.md) and the
+[translation guide](docs/TRANSLATION.md).
+
 ---
 
 ## Testing
 
 ```sh
 node scripts/check.mjs
+node --test test/pricing.test.mjs
 ```
 
-The check validates the manifest, runs `node --check` on both halves, and
-verifies every locale against `en-US.json`: file tag, `locale` field, key set,
-empty values and `{placeholder}` preservation. CI runs the same command on every
-push and pull request.
+The check validates the manifest, runs `node --check` on the Host, Client and
+`lib/pricing.js`, and verifies every locale against `en-US.json`: file tag,
+`locale` field, key set, empty values and `{placeholder}` preservation.
+
+The unit suite covers the pure pricing layer: per-million costs, cache-hit and
+cache-write fallbacks, Off-Peak window maths (including windows that cross UTC
+midnight), currency conversion, release comparison, and extraction of the model
+list the user bound in **Settings → Models**. CI runs both commands on every push
+and pull request.
 
 ---
 
