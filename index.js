@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import {
   DEFAULT_PEAK_DAYS,
   DEFAULT_PEAK_WINDOWS,
+  DEFAULT_HOLIDAYS_2026,
   configuredSetup,
   convert,
   costOf,
@@ -39,7 +40,7 @@ const DEFAULTS = {
   rateUpdatedAt: null,
   peakWindows: DEFAULT_PEAK_WINDOWS,
   peakDays: DEFAULT_PEAK_DAYS.slice(),
-  holidays: [],
+  holidays: DEFAULT_HOLIDAYS_2026.slice(),
   language: 'auto',
   hideWallet: false,
   hideLine: false,

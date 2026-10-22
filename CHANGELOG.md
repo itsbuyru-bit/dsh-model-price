@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] — 2026-10-22
+
+### Added
+
+- Default Chinese public holidays for 2026: the statutory days only
+  (2026-01-01, 2026-02-16…19, 2026-04-05, 2026-05-01…02, 2026-06-19,
+  2026-09-25, 2026-10-01…03), without the bridge days from the State Council
+  notice. Editable in Settings.
+
+[1.6.1]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.6.1
+
 ## [1.6.0] — 2026-10-22
 
 ### Added

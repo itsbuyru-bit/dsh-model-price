@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  DEFAULT_HOLIDAYS_2026,
   configuredSetup,
   convert,
   costOf,
@@ -133,6 +134,15 @@ test('requestUsage separates free and billable Search/Fetch calls', () => {
   assert.equal(usage.billableSearches, 0)
   assert.equal(usage.billableFetches, 1)
   assert.ok(Math.abs(usage.costUsd - 0.00075) < 1e-12)
+})
+
+test('default 2026 statutory holidays make weekdays Off-Peak', () => {
+  const config = { holidays: DEFAULT_HOLIDAYS_2026 }
+  // 2026-02-17 (Tuesday, Spring Festival) and 2026-10-01 (Thursday) are holidays.
+  assert.equal(isOffPeak(Date.parse('2026-02-17T02:00:00Z'), config), true)
+  assert.equal(isOffPeak(Date.parse('2026-10-01T02:00:00Z'), config), true)
+  // 2026-02-24 is a regular Tuesday.
+  assert.equal(isOffPeak(Date.parse('2026-02-24T02:00:00Z'), config), false)
 })
 
 test('modelId accepts strings and objects only', () => {

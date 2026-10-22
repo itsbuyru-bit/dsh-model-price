@@ -141,7 +141,7 @@ file falls back to defaults; reads never throw.
 | `rate` | `7.1` | CNY per USD; must be > 0, restamps `rateUpdatedAt` |
 | `peakWindows` | `01:00-04:00, 06:00-10:00` | UTC ranges; anything outside is Off-Peak |
 | `peakDays` | `[1,2,3,4,5]` | ISO weekdays (1 = Monday) that can be Peak |
-| `holidays` | `[]` | `YYYY-MM-DD` dates that are fully Off-Peak |
+| `holidays` | 2026 statutory days | `YYYY-MM-DD` dates that are fully Off-Peak; bridge days excluded |
 | `language` | `auto` | `auto` or a BCP 47 tag |
 | `hideWallet` | `false` | Masks wallet amounts (`••••`) |
 | `hideLine` | `false` | Removes the composer line |
