@@ -81,6 +81,8 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
   Models**; duplicates are skipped and the list is collapsible.
 - **Localized** — 9 bundled languages with automatic discovery of new locale
   files.
+- **Update indicator** — optional check of the latest GitHub release (at most
+  once every 6 hours) with a link to it in the About block.
 - **Dependency-free, build-free** — plain JavaScript, no runtime packages.
 
 ---
@@ -92,7 +94,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.0.1** |
+| Plugin version | **1.1.0** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -283,9 +285,12 @@ page. Missing keys fall back to `en-US`, then to the key name.
 | All-time token counters | `~/.dsh/api-spend/totals.json` | Token buckets only |
 | Wallet balance | DeepSeek account API | Cached 45 s in memory, never written to disk |
 | Session usage | Harness session log | Read through the projection, never modified |
+| Update check | `api.github.com` Releases API | Optional; one request per 6 h, no payload |
 
-There are no analytics, no telemetry, no external requests except the account
-balance call made by the Harness itself. The FX rate is manual by design.
+There are no analytics and no telemetry. The only outbound requests are the
+account balance call made by the Harness itself and the optional update check;
+disable it in **Settings → Models & prices → Check for updates**. The FX rate is
+manual by design.
 
 ---
 
@@ -330,6 +335,9 @@ push and pull request.
 
 - Distribution is GitHub-only. Re-installing the bundle from
   `github:itsbuyru-bit/dsh-model-price` picks up the default branch.
+- The About block shows **Update available** when a newer GitHub release exists.
+  The plugin only reports it: install the new tag with
+  `github:itsbuyru-bit/dsh-model-price#vX.Y.Z` (or reinstall the bundle).
 - Version lives in `package.json` and `CHANGELOG.md`; releases are tagged
   `vX.Y.Z`.
 - Pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml` and publishes a

@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-10-22
+
+### Added
+
+- Optional update check: the Host asks the GitHub Releases API for the latest
+  tag at most once every 6 hours and the About block links to a newer release.
+  The check is on by default and can be disabled in the settings.
+
+[1.1.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.1.0
+
 ## [1.0.1] — 2026-10-22
 
 ### Added

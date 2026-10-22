@@ -89,6 +89,9 @@
     "offEmpty": "leer = Peak",
     "live": "KI arbeitet",
     "settingsNav": "Modelle und Preise",
-    "about": "Über"
+    "about": "Über",
+    "checkUpdatesLabel": "Nach Updates suchen",
+    "checkUpdatesHint": "Eine Anfrage an GitHub alle 6 Stunden; es werden keine weiteren Daten gesendet.",
+    "updateAvailable": "Update verfügbar"
   }
 }

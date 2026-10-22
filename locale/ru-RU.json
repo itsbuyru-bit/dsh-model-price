@@ -89,6 +89,9 @@
     "offEmpty": "пусто = Peak",
     "live": "ИИ работает",
     "settingsNav": "Модели и цены",
-    "about": "О плагине"
+    "about": "О плагине",
+    "checkUpdatesLabel": "Проверять обновления",
+    "checkUpdatesHint": "Один запрос к GitHub раз в 6 часов; других данных не отправляется.",
+    "updateAvailable": "Доступно обновление"
   }
 }

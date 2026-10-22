@@ -229,6 +229,7 @@ window.__ModuleLoader__.load({
       '.mp-about{margin-top:2px;padding-top:12px;border-top:.5px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary);font-size:11.5px;line-height:1.7}',
       '.mp-about a{color:var(--dsw-alias-label-primary);text-decoration:underline;text-underline-offset:2px}',
       '.mp-about a:hover{color:var(--dsw-alias-brand-primary)}',
+      '.mp-update{color:var(--dsw-alias-state-warn-primary);font-weight:600;margin-bottom:4px}',
       '.mp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
       '.mp-ok{color:var(--dsw-alias-state-success-primary);font-size:11.5px}',
       '.mp-err{color:var(--dsw-alias-state-error-primary);font-size:11.5px}',
@@ -652,6 +653,7 @@ window.__ModuleLoader__.load({
             language: value.config.language,
             hideWallet: Boolean(value.config.hideWallet),
             hideLine: Boolean(value.config.hideLine),
+            checkUpdates: value.config.checkUpdates !== false,
             budget: value.config.budget === null || value.config.budget === undefined ? '' : String(value.config.budget),
           })
           var keys = value.models.slice()
@@ -750,6 +752,7 @@ window.__ModuleLoader__.load({
           language: draft.language,
           hideWallet: draft.hideWallet,
           hideLine: draft.hideLine,
+          checkUpdates: draft.checkUpdates,
           budget: draft.budget === '' ? null : draft.budget,
         }).then(function (value) {
           setDisplayStatus('saved')
@@ -897,6 +900,16 @@ window.__ModuleLoader__.load({
                 h('span', { key: 's' }, t('hideLineHint')),
               ]),
             ]),
+            h('div', { className: 'mp-field', key: 'upd' }, [
+              h('label', { key: 'l' }, t('checkUpdatesLabel')),
+              h('label', { key: 'cb', style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } }, [
+                h('input', {
+                  key: 'i', type: 'checkbox', checked: draft.checkUpdates,
+                  onChange: function (event) { field('checkUpdates', event.target.checked) },
+                }),
+                h('span', { key: 's' }, t('checkUpdatesHint')),
+              ]),
+            ]),
           ]),
           h('div', { className: 'mp-card-foot', key: 'foot' }, [
             statusText(displayStatus),
@@ -1025,6 +1038,12 @@ window.__ModuleLoader__.load({
         ]),
         h('div', { className: 'mp-about', key: 'about' }, [
           h('div', { className: 'mp-section', key: 'h', style: { marginTop: 0 } }, t('about')),
+          loaded && loaded.update && loaded.update.enabled && loaded.update.available
+            ? h('div', { className: 'mp-update', key: 'upd' }, [
+              t('updateAvailable') + ': v' + loaded.update.latest + ' · ',
+              h('a', { key: 'rel', href: loaded.update.url, target: '_blank', rel: 'noopener noreferrer' }, loaded.update.url),
+            ])
+            : null,
           h('div', { key: 'line' }, [
             AUTHOR_NAME + ' · ',
             h('a', { key: 'mail', href: 'mailto:' + AUTHOR_EMAIL }, AUTHOR_EMAIL),

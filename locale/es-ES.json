@@ -89,6 +89,9 @@
     "offEmpty": "vacío = Peak",
     "live": "La IA está trabajando",
     "settingsNav": "Modelos y precios",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "checkUpdatesLabel": "Buscar actualizaciones",
+    "checkUpdatesHint": "Una petición a GitHub cada 6 horas; no se envían otros datos.",
+    "updateAvailable": "Actualización disponible"
   }
 }

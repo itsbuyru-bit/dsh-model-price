@@ -89,6 +89,9 @@
     "offEmpty": "空 = Peak",
     "live": "AI が実行中",
     "settingsNav": "モデルと料金",
-    "about": "このプラグインについて"
+    "about": "このプラグインについて",
+    "checkUpdatesLabel": "更新を確認",
+    "checkUpdatesHint": "6 時間ごとに GitHub へ 1 回リクエストします。他のデータは送信しません。",
+    "updateAvailable": "更新があります"
   }
 }

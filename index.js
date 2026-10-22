@@ -11,6 +11,9 @@ const LOCALE_DIR = join(PLUGIN_DIR, 'locale')
 const LOCALE_TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/
 // Locale FILES must carry a region/script subtag (`en-US`, `zh-CN`, `pt-BR`).
 const LOCALE_FILE_TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})+$/
+const REPO_URL = 'https://github.com/itsbuyru-bit/dsh-model-price'
+const RELEASES_API = 'https://api.github.com/repos/itsbuyru-bit/dsh-model-price/releases/latest'
+const UPDATE_INTERVAL = 6 * 60 * 60 * 1000
 
 const KEY = 'modelPrice'
 const API_PREFIX = '/api-spend/api'
@@ -27,6 +30,7 @@ const DEFAULTS = {
   language: 'auto',
   hideWallet: false,
   hideLine: false,
+  checkUpdates: true,
   budget: null,
   prices: {},
 }
@@ -178,6 +182,9 @@ export function apply(ctx, rawConfig = {}) {
     wallet: null,
     walletAt: 0,
     walletBusy: false,
+    update: null,
+    updateAt: 0,
+    updateBusy: false,
     lastBySession: new WeakMap(),
     writeTimer: null,
   }
@@ -458,6 +465,62 @@ export function apply(ctx, rawConfig = {}) {
     }
   }
 
+  /* -------- update check (GitHub Releases, at most every 6 hours) -------- */
+
+  function isNewer(latest, current) {
+    const left = String(latest).replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
+    const right = String(current).replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
+    for (let i = 0; i < Math.max(left.length, right.length); i += 1) {
+      const a = left[i] || 0
+      const b = right[i] || 0
+      if (a > b) return true
+      if (a < b) return false
+    }
+    return false
+  }
+
+  async function refreshUpdate(force) {
+    if (!runtime.config.checkUpdates) {
+      runtime.update = null
+      return
+    }
+    if (!force && Date.now() - runtime.updateAt < UPDATE_INTERVAL) return
+    if (runtime.updateBusy) return
+    runtime.updateBusy = true
+    try {
+      const response = await fetch(RELEASES_API, {
+        headers: { accept: 'application/vnd.github+json', 'user-agent': 'dsh-model-price' },
+        signal: AbortSignal.timeout(6000),
+      })
+      if (!response.ok) throw new Error(`GitHub answered ${response.status}`)
+      const release = await response.json()
+      const tag = typeof release.tag_name === 'string' ? release.tag_name.replace(/^v/i, '') : ''
+      runtime.update = {
+        latest: tag || null,
+        url: typeof release.html_url === 'string' ? release.html_url : `${REPO_URL}/releases`,
+        checkedAt: Date.now(),
+      }
+    } catch {
+      runtime.update = { ...(runtime.update || {}), checkedAt: Date.now(), error: true }
+    } finally {
+      runtime.updateAt = Date.now()
+      runtime.updateBusy = false
+    }
+  }
+
+  function updateView() {
+    const current = PLUGIN_VERSION
+    const latest = runtime.update && runtime.update.latest ? runtime.update.latest : null
+    return {
+      enabled: Boolean(runtime.config.checkUpdates),
+      current,
+      latest,
+      available: Boolean(latest && isNewer(latest, current)),
+      url: (runtime.update && runtime.update.url) || `${REPO_URL}/releases`,
+      checkedAt: (runtime.update && runtime.update.checkedAt) || null,
+    }
+  }
+
   function publicConfig() {
     const cfg = runtime.config
     return {
@@ -470,6 +533,7 @@ export function apply(ctx, rawConfig = {}) {
       language: cfg.language,
       hideWallet: cfg.hideWallet,
       hideLine: cfg.hideLine,
+      checkUpdates: cfg.checkUpdates,
       budget: cfg.budget,
     }
   }
@@ -505,6 +569,7 @@ export function apply(ctx, rawConfig = {}) {
       }
       if (patch.hideWallet !== undefined) cfg.hideWallet = Boolean(patch.hideWallet)
       if (patch.hideLine !== undefined) cfg.hideLine = Boolean(patch.hideLine)
+      if (patch.checkUpdates !== undefined) cfg.checkUpdates = Boolean(patch.checkUpdates)
       if (patch.budget !== undefined) cfg.budget = num(patch.budget)
       if (patch.prices && typeof patch.prices === 'object') {
         const cleaned = {}
@@ -538,6 +603,7 @@ export function apply(ctx, rawConfig = {}) {
       const sessionId = payload && payload.sessionId
       if (!sessionId) throw new Error('sessionId is required')
       if (Date.now() - runtime.walletAt > 45000) void refreshWallet()
+      if (Date.now() - runtime.updateAt > UPDATE_INTERVAL) void refreshUpdate()
       const session = await buildSession(sessionId)
       return {
         config: publicConfig(),
@@ -545,15 +611,20 @@ export function apply(ctx, rawConfig = {}) {
         tariff: isOffPeak(Date.now(), runtime.config) ? 'off' : 'peak',
         session,
         allTime: allTimeView(),
+        update: updateView(),
       }
     },
     async config() {
-      return { config: fullConfig(), models: usedModels(), allTime: allTimeView() }
+      if (Date.now() - runtime.updateAt > UPDATE_INTERVAL) void refreshUpdate()
+      return { config: fullConfig(), models: usedModels(), allTime: allTimeView(), update: updateView() }
     },
     async save(payload) {
+      const before = runtime.config.checkUpdates
       saveConfig(payload || {})
       if (payload && payload.prices) void refreshWallet()
-      return { config: fullConfig(), models: usedModels(), allTime: allTimeView() }
+      if (runtime.config.checkUpdates && !before) void refreshUpdate(true)
+      if (!runtime.config.checkUpdates) runtime.update = null
+      return { config: fullConfig(), models: usedModels(), allTime: allTimeView(), update: updateView() }
     },
     async wallet() {
       await refreshWallet()
@@ -640,8 +711,9 @@ export function apply(ctx, rawConfig = {}) {
     return () => dispose()
   }, 'model-price: http api')
 
-  // Warm the wallet once so the first poll has data.
+  // Warm the wallet and the update check once so the first poll has data.
   void refreshWallet()
+  void refreshUpdate()
 }
 
 /* ------------------------------------------------------------------ */

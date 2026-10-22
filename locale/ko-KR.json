@@ -89,6 +89,9 @@
     "offEmpty": "비어 있음 = Peak",
     "live": "AI 작업 중",
     "settingsNav": "모델 및 가격",
-    "about": "정보"
+    "about": "정보",
+    "checkUpdatesLabel": "업데이트 확인",
+    "checkUpdatesHint": "6시간마다 GitHub에 한 번 요청하며 다른 데이터는 보내지 않습니다.",
+    "updateAvailable": "업데이트 가능"
   }
 }
