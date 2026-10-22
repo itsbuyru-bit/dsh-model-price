@@ -95,6 +95,11 @@
     "updateAvailable": "Mise à jour disponible",
     "checkNow": "Vérifier maintenant",
     "checking": "Vérification…",
-    "upToDate": "À jour"
+    "upToDate": "À jour",
+    "showBestTimeLabel": "Afficher le meilleur moment dans le popover",
+    "showBestTimeHint": "Affiche la plage remisée et le compte à rebours.",
+    "bestTime": "Meilleur moment",
+    "bestTimeNow": "Off-Peak maintenant, jusqu’à {time} (heure locale)",
+    "bestTimeIn": "Off-Peak dans {duration} · {start}–{end} heure locale"
   }
 }

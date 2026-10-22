@@ -95,6 +95,11 @@
     "updateAvailable": "업데이트 가능",
     "checkNow": "지금 확인",
     "checking": "확인 중…",
-    "upToDate": "최신 상태"
+    "upToDate": "최신 상태",
+    "showBestTimeLabel": "팝오버에 최적 시간 표시",
+    "showBestTimeHint": "할인 시간대와 남은 시간을 표시합니다.",
+    "bestTime": "최적 시간",
+    "bestTimeNow": "지금 Off-Peak, {time}까지 (현지 시간)",
+    "bestTimeIn": "Off-Peak 시작까지 {duration} · 현지 {start}–{end}"
   }
 }

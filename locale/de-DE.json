@@ -95,6 +95,11 @@
     "updateAvailable": "Update verfügbar",
     "checkNow": "Jetzt prüfen",
     "checking": "Prüfe…",
-    "upToDate": "Aktuell"
+    "upToDate": "Aktuell",
+    "showBestTimeLabel": "Besten Zeitpunkt im Popover anzeigen",
+    "showBestTimeHint": "Zeigt das Rabattfenster und den Countdown.",
+    "bestTime": "Beste Zeit",
+    "bestTimeNow": "Jetzt Off-Peak, bis {time} (Ortszeit)",
+    "bestTimeIn": "Off-Peak in {duration} · {start}–{end} Ortszeit"
   }
 }

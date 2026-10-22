@@ -95,6 +95,11 @@
     "updateAvailable": "Update available",
     "checkNow": "Check now",
     "checking": "Checking…",
-    "upToDate": "Up to date"
+    "upToDate": "Up to date",
+    "showBestTimeLabel": "Show the best time in the popover",
+    "showBestTimeHint": "Displays the cheap window and a countdown to it.",
+    "bestTime": "Best time",
+    "bestTimeNow": "Off-Peak now, until {time} (local)",
+    "bestTimeIn": "Off-Peak starts in {duration} · {start}–{end} local"
   }
 }

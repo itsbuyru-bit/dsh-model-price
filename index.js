@@ -31,6 +31,7 @@ const DEFAULTS = {
   hideWallet: false,
   hideLine: false,
   checkUpdates: true,
+  showBestTime: true,
   budget: null,
   prices: {},
 }
@@ -534,6 +535,7 @@ export function apply(ctx, rawConfig = {}) {
       hideWallet: cfg.hideWallet,
       hideLine: cfg.hideLine,
       checkUpdates: cfg.checkUpdates,
+      showBestTime: cfg.showBestTime,
       budget: cfg.budget,
     }
   }
@@ -570,6 +572,7 @@ export function apply(ctx, rawConfig = {}) {
       if (patch.hideWallet !== undefined) cfg.hideWallet = Boolean(patch.hideWallet)
       if (patch.hideLine !== undefined) cfg.hideLine = Boolean(patch.hideLine)
       if (patch.checkUpdates !== undefined) cfg.checkUpdates = Boolean(patch.checkUpdates)
+      if (patch.showBestTime !== undefined) cfg.showBestTime = Boolean(patch.showBestTime)
       if (patch.budget !== undefined) cfg.budget = num(patch.budget)
       if (patch.prices && typeof patch.prices === 'object') {
         const cleaned = {}

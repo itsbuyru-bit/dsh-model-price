@@ -95,6 +95,11 @@
     "updateAvailable": "有可用更新",
     "checkNow": "立即检查",
     "checking": "检查中…",
-    "upToDate": "已是最新"
+    "upToDate": "已是最新",
+    "showBestTimeLabel": "在弹窗中显示最佳时间",
+    "showBestTimeHint": "显示折扣时段及倒计时。",
+    "bestTime": "最佳时间",
+    "bestTimeNow": "当前为 Off-Peak，至 {time}（本地时间）",
+    "bestTimeIn": "Off-Peak 将在 {duration} 后开始 · 本地 {start}–{end}"
   }
 }

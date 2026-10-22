@@ -95,6 +95,11 @@
     "updateAvailable": "Доступно обновление",
     "checkNow": "Проверить сейчас",
     "checking": "Проверяем…",
-    "upToDate": "Обновлений нет"
+    "upToDate": "Обновлений нет",
+    "showBestTimeLabel": "Показывать лучшее время в поповере",
+    "showBestTimeHint": "Показывает дешёвое окно и обратный отсчёт до него.",
+    "bestTime": "Лучшее время",
+    "bestTimeNow": "Сейчас Off-Peak, до {time} (местное)",
+    "bestTimeIn": "Off-Peak через {duration} · {start}–{end} по местному"
   }
 }

@@ -146,6 +146,67 @@ window.__ModuleLoader__.load({
       }
     }
 
+    function parseClock(text, fallback) {
+      var match = /^(\d{1,2}):(\d{2})$/.exec(String(text || '').trim())
+      if (!match) return fallback
+      var hour = Number(match[1])
+      var minute = Number(match[2])
+      if (hour > 23 || minute > 59) return fallback
+      return hour * 60 + minute
+    }
+
+    function clockText(date, localeTag) {
+      try {
+        return date.toLocaleTimeString(localeTag || 'en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+      } catch (error) {
+        return String(date.getUTCHours()).padStart(2, '0') + ':' + String(date.getUTCMinutes()).padStart(2, '0')
+      }
+    }
+
+    function durationText(ms, localeTag) {
+      var total = Math.max(1, Math.round(ms / 60000))
+      var hours = Math.floor(total / 60)
+      var minutes = total % 60
+      var parts = []
+      try {
+        if (hours > 0) {
+          parts.push(new Intl.NumberFormat(localeTag || 'en-US', { style: 'unit', unit: 'hour', unitDisplay: 'narrow' }).format(hours))
+        }
+        if (minutes > 0) {
+          parts.push(new Intl.NumberFormat(localeTag || 'en-US', { style: 'unit', unit: 'minute', unitDisplay: 'narrow' }).format(minutes))
+        }
+      } catch (error) {
+        if (hours > 0) parts.push(hours + 'h')
+        if (minutes > 0) parts.push(minutes + 'm')
+      }
+      return parts.join(' ')
+    }
+
+    /** The next Off-Peak window in local time, from the UTC-configured boundaries. */
+    function cheapWindowInfo(config, nowMs) {
+      var startMin = parseClock(config.offPeakStart, 16 * 60 + 30)
+      var endMin = parseClock(config.offPeakEnd, 30)
+      var now = new Date(nowMs)
+      var year = now.getUTCFullYear()
+      var month = now.getUTCMonth()
+      var date = now.getUTCDate()
+      var start = new Date(Date.UTC(year, month, date, Math.floor(startMin / 60), startMin % 60))
+      var end = new Date(Date.UTC(year, month, date, Math.floor(endMin / 60), endMin % 60))
+      if (end.getTime() <= start.getTime()) end = new Date(end.getTime() + 86400000)
+      if (nowMs >= end.getTime()) {
+        start = new Date(start.getTime() + 86400000)
+        end = new Date(end.getTime() + 86400000)
+      }
+      var active = nowMs >= start.getTime() && nowMs < end.getTime()
+      return {
+        active: active,
+        start: start,
+        end: end,
+        startsInMs: start.getTime() - nowMs,
+        endsInMs: end.getTime() - nowMs,
+      }
+    }
+
     /* ------------------------------ styles ----------------------------- */
 
     var CSS = [
@@ -164,6 +225,7 @@ window.__ModuleLoader__.load({
       '.mp-eye:hover{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary)}',
       '.mp-pop{position:absolute;right:0;bottom:calc(100% + 8px);z-index:1100;box-sizing:border-box;width:min(360px,calc(100vw - 24px));max-height:min(70vh,540px);overflow:auto;padding:12px;border:0;border-radius:var(--dsw-radius-lg,12px);background:var(--dsw-specific-menu,var(--dsw-alias-bg-layer-2));backdrop-filter:var(--dsw-menu-backdrop-filter,none);box-shadow:var(--dsw-elevation-prominent,0 12px 32px rgba(0,0,0,.28));color:var(--dsw-alias-label-secondary);font-size:12px;line-height:20px;text-align:left;white-space:normal;cursor:default}',
       '.mp-section{margin:14px 0 4px;color:var(--dsw-alias-label-tertiary);font-size:12px;font-weight:500;line-height:20px}',
+      '.mp-best{margin-bottom:10px;padding-bottom:10px;border-bottom:.5px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}',
       '.mp-pop .mp-head{display:flex;align-items:center;gap:6px;margin-bottom:0}',
       '.mp-headline{color:var(--dsw-alias-label-tertiary)}',
       '.mp-percent{color:var(--dsw-alias-label-primary);font-weight:500;font-variant-numeric:tabular-nums}',
@@ -388,8 +450,24 @@ window.__ModuleLoader__.load({
         { key: 'write', label: t('cacheWrite'), value: totals.cacheWrite, tint: 'mp-tint-write' },
       ].filter(function (part) { return part.value > 0 })
 
+      var best = state.config.showBestTime === false ? null : cheapWindowInfo(state.config, Date.now())
+      var bestText = null
+      if (best) {
+        bestText = best.active
+          ? interpolate(t('bestTimeNow'), { time: clockText(best.end, lang) })
+          : interpolate(t('bestTimeIn'), {
+            duration: durationText(best.startsInMs, lang),
+            start: clockText(best.start, lang),
+            end: clockText(best.end, lang),
+          })
+      }
+
       return h('div', { className: 'mp-pop', ref: ref, style: style, role: 'dialog', 'aria-label': t('apiSpend') }, [
-        h('div', { className: 'mp-section', key: 'ws', style: { marginTop: 0 } }, t('wallet')),
+        best ? h('div', { className: 'mp-best', key: 'best' }, [
+          h('div', { className: 'mp-section', key: 'h', style: { marginTop: 0 } }, t('bestTime')),
+          h('div', { key: 't' }, bestText),
+        ]) : null,
+        h('div', { className: 'mp-section', key: 'ws', style: { marginTop: best ? 10 : 0 } }, t('wallet')),
         h(WalletRows, { key: 'wr', wallet: wallet, t: t, hideWallet: props.hideWallet }),
         h('div', { className: 'mp-hr', key: 'hr1' }),
         h('div', { className: 'mp-head', key: 'head' }, [
@@ -658,6 +736,7 @@ window.__ModuleLoader__.load({
             hideWallet: Boolean(value.config.hideWallet),
             hideLine: Boolean(value.config.hideLine),
             checkUpdates: value.config.checkUpdates !== false,
+            showBestTime: value.config.showBestTime !== false,
             budget: value.config.budget === null || value.config.budget === undefined ? '' : String(value.config.budget),
           })
           var keys = value.models.slice()
@@ -757,6 +836,7 @@ window.__ModuleLoader__.load({
           hideWallet: draft.hideWallet,
           hideLine: draft.hideLine,
           checkUpdates: draft.checkUpdates,
+          showBestTime: draft.showBestTime,
           budget: draft.budget === '' ? null : draft.budget,
         }).then(function (value) {
           setDisplayStatus('saved')
@@ -903,6 +983,19 @@ window.__ModuleLoader__.load({
                 onChange: function (event) { field('offPeakEnd', event.target.value) },
               }),
             ]),
+          ]),
+          h('div', { className: 'mp-field', key: 'besttime', style: { marginTop: 10 } }, [
+            h('label', {
+              key: 'cb',
+              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
+            }, [
+              h('input', {
+                key: 'i', type: 'checkbox', checked: draft.showBestTime,
+                onChange: function (event) { field('showBestTime', event.target.checked) },
+              }),
+              h('span', { key: 's' }, t('showBestTimeLabel')),
+            ]),
+            h('span', { className: 'hint', key: 'h' }, t('showBestTimeHint')),
           ]),
           h('div', { className: 'mp-grid', key: 'visibility', style: { marginTop: 10 } }, [
             h('div', { className: 'mp-field', key: 'hidew' }, [

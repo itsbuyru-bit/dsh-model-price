@@ -95,6 +95,11 @@
     "updateAvailable": "更新があります",
     "checkNow": "今すぐ確認",
     "checking": "確認中…",
-    "upToDate": "最新です"
+    "upToDate": "最新です",
+    "showBestTimeLabel": "ポップオーバーに最適な時間を表示",
+    "showBestTimeHint": "割引時間帯とカウントダウンを表示します。",
+    "bestTime": "最適な時間",
+    "bestTimeNow": "現在 Off-Peak（{time} まで・現地時間）",
+    "bestTimeIn": "Off-Peak は {duration} 後に開始 · 現地 {start}–{end}"
   }
 }

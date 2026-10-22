@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-10-22
+
+### Added
+
+- “Best time” block in the popover: the Off-Peak window in local time and a
+  countdown until it starts (or until it ends, when already active). Toggle it
+  in the Display settings.
+
+[1.3.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.3.0
+
 ## [1.2.0] — 2026-10-22
 
 ### Added
