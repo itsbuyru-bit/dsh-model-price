@@ -61,9 +61,9 @@ function Ask-Yes([string]$Question) {
 function Resolve-DshHome([string]$Given) {
   if ($Given) { return (Resolve-Path $Given).Path }
   if ($env:DSH_HOME) { return (Resolve-Path $env:DSH_HOME).Path }
-  $home = Join-Path $env:USERPROFILE '.dsh'
-  if (-not (Test-Path $home)) { Die "DSH home not found at $home - pass -DshHome." }
-  return (Resolve-Path $home).Path
+  $candidate = Join-Path $env:USERPROFILE '.dsh'
+  if (-not (Test-Path $candidate)) { Die "DSH home not found at $candidate - pass -DshHome." }
+  return (Resolve-Path $candidate).Path
 }
 
 function Get-WorkspaceKey([string]$Path) {
