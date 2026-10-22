@@ -1,0 +1,72 @@
+{
+  "name": "dsh-model-price",
+  "version": "1.0.0",
+  "description": "Per-model API prices in USD or CNY, wallet balance and live session spend for DeepSeek Harness.",
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "pricing",
+    "cost",
+    "usage",
+    "tokens",
+    "wallet",
+    "llm",
+    "localization"
+  ],
+  "author": {
+    "name": "Aleksey Zakurdaev",
+    "email": "itsnxt@gmail.com"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.ru.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "test": "node scripts/check.mjs"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itsbuyru-bit/dsh-model-price.git"
+  },
+  "homepage": "https://github.com/itsbuyru-bit/dsh-model-price#readme",
+  "bugs": {
+    "url": "https://github.com/itsbuyru-bit/dsh-model-price/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    },
+    "manifestVersion": 1
+  }
+}

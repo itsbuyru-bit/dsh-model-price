@@ -1,0 +1,28 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
+[Semantic Versioning](https://semver.org/).
+
+## [1.0.0] — 2026-10-22
+
+### Added
+
+- Per-model price table with Peak and Off-Peak rates for input (cache miss),
+  output, cache hit and cache write, in USD or CNY.
+- Composer dock line with the live session spend, the wallet balance and a
+  Peak / Off-Peak badge.
+- Click-through popover with the token composition, per-model cost, wallet
+  breakdown (balance + bonus), child sessions and the all-time total.
+- Real DeepSeek account balance with a local-budget fallback and an eye toggle
+  to mask the amount.
+- Model import from **Settings → Models**, collapsible model list and per-block
+  **Apply** buttons.
+- Manual CNY/USD rate, editable Off-Peak window in UTC and display-currency
+  conversion for both session cost and wallet.
+- Nine bundled locales (`en-US`, `ru-RU`, `zh-CN`, `ja-JP`, `ko-KR`, `es-ES`,
+  `pt-BR`, `de-DE`, `fr-FR`) with automatic discovery of new locale files.
+- `scripts/check.mjs` and a GitHub Actions workflow validating syntax, manifest
+  and locale parity.
+
+[1.0.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.0.0

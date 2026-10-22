@@ -1,0 +1,8 @@
+node_modules/
+.scratch/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tgz
+.dsh-office*/

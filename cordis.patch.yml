@@ -1,0 +1,5 @@
+- insert:
+    - id: model-price
+      name: 'dsh-model-price'
+      config:
+        dataDir: ''

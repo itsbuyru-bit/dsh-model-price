@@ -1,0 +1,737 @@
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+export const inject = ['sessionProjections', 'webServer', 'sessions', 'agents']
+
+const PLUGIN_DIR = dirname(fileURLToPath(import.meta.url))
+const PLUGIN_VERSION = JSON.parse(readFileSync(join(PLUGIN_DIR, 'package.json'), 'utf8')).version
+const LOCALE_DIR = join(PLUGIN_DIR, 'locale')
+const LOCALE_TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/
+// Locale FILES must carry a region/script subtag (`en-US`, `zh-CN`, `pt-BR`).
+const LOCALE_FILE_TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})+$/
+
+const KEY = 'modelPrice'
+const API_PREFIX = '/api-spend/api'
+const DEFAULT_OFF_START = '16:30'
+const DEFAULT_OFF_END = '00:30'
+
+const DEFAULTS = {
+  version: 1,
+  displayCurrency: 'USD',
+  rate: 7.1,
+  rateUpdatedAt: null,
+  offPeakStart: DEFAULT_OFF_START,
+  offPeakEnd: DEFAULT_OFF_END,
+  language: 'auto',
+  hideWallet: false,
+  hideLine: false,
+  budget: null,
+  prices: {},
+}
+
+/* ------------------------------------------------------------------ */
+/* small helpers                                                       */
+/* ------------------------------------------------------------------ */
+
+const num = (value) => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'string' && value.trim() === '') return null
+  const n = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
+  return Number.isFinite(n) ? n : null
+}
+
+const zeroBuckets = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 })
+
+const bucketsOf = (usage) => ({
+  input: usage.inputTokens || 0,
+  output: usage.outputTokens || 0,
+  cacheRead: usage.cacheReadTokens || 0,
+  cacheWrite: usage.cacheWriteTokens || 0,
+})
+
+const addBuckets = (target, source) => {
+  target.input += source.input
+  target.output += source.output
+  target.cacheRead += source.cacheRead
+  target.cacheWrite += source.cacheWrite
+}
+
+const subBuckets = (target, source) => {
+  target.input -= source.input
+  target.output -= source.output
+  target.cacheRead -= source.cacheRead
+  target.cacheWrite -= source.cacheWrite
+}
+
+const sameBuckets = (a, b) => a && b
+  && a.input === b.input && a.output === b.output
+  && a.cacheRead === b.cacheRead && a.cacheWrite === b.cacheWrite
+
+const emptyModel = () => ({ peak: zeroBuckets(), off: zeroBuckets() })
+
+/** Usage of one assistant settlement, falling back to the last streamed usage chunk. */
+function usageOf(event) {
+  if (event.type !== 'assistant/message') return undefined
+  if (event.data.usage !== undefined) return event.data.usage
+  const stream = event.data.stream
+  if (!Array.isArray(stream)) return undefined
+  for (let i = stream.length - 1; i >= 0; i -= 1) {
+    const record = stream[i]
+    if (record && record.type === 'chunk' && record.chunk && record.chunk.type === 'usage') {
+      return record.chunk.usage
+    }
+  }
+  return undefined
+}
+
+function routeOf(event) {
+  const source = event.data && event.data.message && event.data.message.source
+  if (!source || typeof source.model !== 'string') return undefined
+  return { provider: source.provider || 'unknown', model: source.model }
+}
+
+/** Minutes since UTC midnight from an ISO "HH:MM" string; null when malformed. */
+function clockMinutes(text, fallback) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(text || '').trim())
+  if (!match) return fallback
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (hour > 23 || minute > 59) return fallback
+  return hour * 60 + minute
+}
+
+function windowOf(config) {
+  const start = clockMinutes(config.offPeakStart, clockMinutes(DEFAULT_OFF_START, 990))
+  const end = clockMinutes(config.offPeakEnd, clockMinutes(DEFAULT_OFF_END, 30))
+  return { start, end }
+}
+
+function isOffPeak(time, config) {
+  const { start, end } = windowOf(config)
+  const date = new Date(time)
+  const minute = date.getUTCHours() * 60 + date.getUTCMinutes()
+  return start <= end ? minute >= start && minute < end : minute >= start || minute < end
+}
+
+/** Normalize one tariff price row; empty cache-hit falls back to input, empty write is free. */
+function normalizePrice(raw, tariff) {
+  if (!raw || typeof raw !== 'object') return null
+  const input = num(raw.input)
+  const output = num(raw.output)
+  if (input === null || output === null) return null
+  const cacheHit = num(raw.cacheHit)
+  const cacheWrite = num(raw.cacheWrite)
+  return {
+    input,
+    output,
+    cacheHit: cacheHit === null ? input : cacheHit,
+    cacheWrite: cacheWrite === null ? 0 : cacheWrite,
+    tariffApplied: cacheHit === null ? `cache-hit = input (${tariff})` : null,
+  }
+}
+
+/** Resolve peak/off prices for one model, or null when unpriced. */
+function priceOf(config, key) {
+  const row = config.prices && config.prices[key]
+  if (!row) return null
+  const peak = normalizePrice(row.peak, 'peak')
+  const off = normalizePrice(row.off, 'off') || peak
+  if (!peak) return null
+  return {
+    currency: row.currency === 'CNY' ? 'CNY' : 'USD',
+    peak,
+    off,
+  }
+}
+
+function convert(amount, from, to, rate) {
+  if (!Number.isFinite(amount)) return 0
+  if (from === to) return amount
+  if (from === 'USD' && to === 'CNY') return amount * rate
+  if (from === 'CNY' && to === 'USD') return rate > 0 ? amount / rate : 0
+  return amount
+}
+
+function costOf(buckets, price) {
+  return (buckets.input * price.input
+    + buckets.output * price.output
+    + buckets.cacheRead * price.cacheHit
+    + buckets.cacheWrite * price.cacheWrite) / 1e6
+}
+
+/* ------------------------------------------------------------------ */
+/* plugin                                                              */
+/* ------------------------------------------------------------------ */
+
+export function apply(ctx, rawConfig = {}) {
+  const root = rawConfig && typeof rawConfig.dataDir === 'string' && rawConfig.dataDir
+    ? rawConfig.dataDir
+    : join(homedir(), '.dsh', 'api-spend')
+  const configFile = join(root, 'config.json')
+  const totalsFile = join(root, 'totals.json')
+
+  const runtime = {
+    config: loadConfig(configFile),
+    totals: loadTotals(totalsFile),
+    wallet: null,
+    walletAt: 0,
+    walletBusy: false,
+    lastBySession: new WeakMap(),
+    writeTimer: null,
+  }
+
+  /* -------- projection: deterministic token buckets per model/tariff -------- */
+
+  const projection = {
+    key: KEY,
+    stateVersion: 1,
+    stateSchema: { parse: (value) => value },
+    init: () => ({ models: {}, missing: 0, last: null }),
+    apply: (state, event) => {
+      if (event.type !== 'assistant/message') return state
+      const usage = usageOf(event)
+      const route = routeOf(event)
+      if (!usage) return { ...state, missing: state.missing + 1 }
+      if (!route) return state
+      const tariff = isOffPeak(event.time, runtime.config) ? 'off' : 'peak'
+      const key = `${route.provider}/${route.model}`
+      const models = { ...state.models }
+      const buckets = bucketsOf(usage)
+      // A retried step settles again at the same turn/step: replace its previous sample.
+      if (state.last && state.last.turn === event.data.turn && state.last.step === event.data.step) {
+        const old = models[state.last.key]
+        if (old) {
+          const patched = { peak: { ...old.peak }, off: { ...old.off } }
+          subBuckets(patched[state.last.tariff], state.last.buckets)
+          models[state.last.key] = patched
+        }
+      }
+      const current = models[key] || emptyModel()
+      const target = {
+        peak: { ...current.peak },
+        off: { ...current.off },
+      }
+      addBuckets(target[tariff], buckets)
+      models[key] = target
+      return {
+        ...state,
+        models,
+        last: {
+          turn: event.data.turn,
+          step: event.data.step,
+          key,
+          tariff,
+          buckets,
+        },
+      }
+    },
+  }
+
+  ctx.effect(() => ctx.sessionProjections.register(projection), 'model-price: projection')
+
+  /* -------- durable all-time totals -------- */
+
+  const foldTotals = (session, event) => {
+    if (!event || event.type !== 'assistant/message') return
+    const usage = usageOf(event)
+    const route = routeOf(event)
+    if (!usage || !route) return
+    const tariff = isOffPeak(event.time, runtime.config) ? 'off' : 'peak'
+    const key = `${route.provider}/${route.model}`
+    const totals = runtime.totals
+    if (!totals.models[key]) totals.models[key] = emptyModel()
+    const previous = runtime.lastBySession.get(session)
+    const marker = `${event.data.turn}:${event.data.step}:${key}`
+    if (previous && previous.marker === marker) {
+      subBuckets(totals.models[previous.key][previous.tariff], previous.buckets)
+    }
+    const buckets = bucketsOf(usage)
+    addBuckets(totals.models[key][tariff], buckets)
+    runtime.lastBySession.set(session, { marker, key, tariff, buckets })
+    scheduleTotalsWrite()
+  }
+
+  ctx.effect(() => ctx.on('session/event', (session, event) => foldTotals(session, event)), 'model-price: totals')
+
+  function scheduleTotalsWrite() {
+    if (runtime.writeTimer) return
+    runtime.writeTimer = setTimeout(() => {
+      runtime.writeTimer = null
+      try {
+        mkdirSync(root, { recursive: true })
+        writeFileSync(totalsFile, JSON.stringify(runtime.totals), 'utf8')
+      } catch (error) {
+        ctx.logger?.warn?.(`model-price: totals write failed: ${error?.message || error}`)
+      }
+    }, 1500)
+    runtime.writeTimer.unref?.()
+  }
+
+  /* -------- wallet -------- */
+
+  async function refreshWallet() {
+    if (runtime.walletBusy) return runtime.wallet
+    runtime.walletBusy = true
+    try {
+      const account = ctx.get('deepseekAccount')
+      let data = null
+      if (account && typeof account.getBalance === 'function') {
+        const balance = await account.getBalance({
+          version: '0.2.1',
+          locale: 'en',
+          timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60,
+        }).catch(() => null)
+        if (balance && balance.status === 'ready') {
+          data = {
+            source: 'account',
+            accounts: (balance.value || []).map((w) => ({ currency: w.currency, amount: Number(w.balance) })),
+            bonuses: (balance.bonusWallets || []).map((w) => ({ currency: w.currency, amount: Number(w.balance) })),
+          }
+        }
+      }
+      if (!data && runtime.config.budget !== null && Number.isFinite(runtime.config.budget)) {
+        data = { source: 'budget', accounts: [], bonuses: [], budget: runtime.config.budget }
+      }
+      runtime.wallet = data
+      runtime.walletAt = Date.now()
+    } finally {
+      runtime.walletBusy = false
+    }
+    return runtime.wallet
+  }
+
+  const walletView = () => {
+    const cfg = runtime.config
+    const wallet = runtime.wallet
+    const currency = cfg.displayCurrency
+    if (!wallet) {
+      return {
+        source: 'none',
+        currency,
+        total: null,
+        balance: null,
+        bonus: null,
+        accounts: [],
+        bonuses: [],
+        budget: cfg.budget,
+        rate: cfg.rate,
+        at: runtime.walletAt || null,
+      }
+    }
+    if (wallet.source === 'budget') {
+      return {
+        source: 'budget',
+        currency,
+        total: wallet.budget,
+        balance: wallet.budget,
+        bonus: 0,
+        accounts: [],
+        bonuses: [],
+        budget: wallet.budget,
+        rate: cfg.rate,
+        at: runtime.walletAt,
+      }
+    }
+    let balance = 0
+    let bonus = 0
+    for (const w of wallet.accounts) balance += convert(w.amount, w.currency, currency, cfg.rate)
+    for (const w of wallet.bonuses) bonus += convert(w.amount, w.currency, currency, cfg.rate)
+    return {
+      source: 'account',
+      currency,
+      total: balance + bonus,
+      balance,
+      bonus,
+      accounts: wallet.accounts,
+      bonuses: wallet.bonuses,
+      budget: cfg.budget,
+      rate: cfg.rate,
+      at: runtime.walletAt,
+    }
+  }
+
+  /* -------- spend aggregation -------- */
+
+  function emptySpend() {
+    return { total: 0, rows: [], missing: 0 }
+  }
+
+  function addStateToSpend(spend, state, config) {
+    if (!state) return
+    for (const [key, model] of Object.entries(state.models || {})) {
+      const [provider, ...rest] = key.split('/')
+      const modelName = rest.join('/')
+      const price = priceOf(config, key)
+      const row = spend.rows.find((r) => r.key === key) || (() => {
+        const created = {
+          key,
+          provider,
+          model: modelName,
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          cost: 0,
+          peakCost: 0,
+          offCost: 0,
+          priced: Boolean(price),
+          currency: price ? price.currency : config.displayCurrency,
+          peakUnit: price ? price.peak : null,
+          offUnit: price ? price.off : null,
+        }
+        spend.rows.push(created)
+        return created
+      })()
+      row.input += (model.peak.input + model.off.input)
+      row.output += (model.peak.output + model.off.output)
+      row.cacheRead += (model.peak.cacheRead + model.off.cacheRead)
+      row.cacheWrite += (model.peak.cacheWrite + model.off.cacheWrite)
+      if (price) {
+        const peakCost = convert(costOf(model.peak, price.peak), price.currency, config.displayCurrency, config.rate)
+        const offCost = convert(costOf(model.off, price.off), price.currency, config.displayCurrency, config.rate)
+        row.cost += peakCost + offCost
+        row.peakCost += peakCost
+        row.offCost += offCost
+        spend.total += peakCost + offCost
+      }
+    }
+    spend.missing += state.missing || 0
+  }
+
+  async function buildSession(sessionId) {
+    const cfg = runtime.config
+    const self = emptySpend()
+    const children = emptySpend()
+    const root = ctx.sessions.get(sessionId)
+    const rootState = root ? ctx.sessionProjections.stateOf(root, KEY) : undefined
+    addStateToSpend(self, rootState, cfg)
+    let entries = []
+    try {
+      const subagents = ctx.get('subagents')
+      if (subagents && typeof subagents.listDescendants === 'function') {
+        entries = await subagents.listDescendants(sessionId).catch(() => [])
+      }
+    } catch {
+      entries = []
+    }
+    const ids = []
+    for (const entry of entries || []) {
+      if (!entry || !entry.id) continue
+      const session = ctx.sessions.get(entry.id)
+      if (!session) continue
+      ids.push(entry.id)
+      addStateToSpend(children, ctx.sessionProjections.stateOf(session, KEY), cfg)
+    }
+    const running = [sessionId, ...ids].some((id) => ctx.agents?.get?.(id)?.status === 'running')
+    const total = self.total + children.total
+    return {
+      id: sessionId,
+      total,
+      currency: cfg.displayCurrency,
+      running,
+      self: {
+        total: self.total,
+        rows: self.rows.sort((a, b) => b.cost - a.cost),
+        missing: self.missing,
+      },
+      children: {
+        total: children.total,
+        count: ids.length,
+        rows: children.rows.sort((a, b) => b.cost - a.cost),
+        missing: children.missing,
+      },
+      unpriced: [...self.rows, ...children.rows].filter((r) => !r.priced).map((r) => r.key),
+    }
+  }
+
+  function allTimeView() {
+    const cfg = runtime.config
+    const spend = emptySpend()
+    addStateToSpend(spend, { models: runtime.totals.models, missing: 0 }, cfg)
+    return {
+      since: runtime.totals.since,
+      total: spend.total,
+      currency: cfg.displayCurrency,
+      rows: spend.rows.sort((a, b) => b.cost - a.cost),
+    }
+  }
+
+  function publicConfig() {
+    const cfg = runtime.config
+    return {
+      version: PLUGIN_VERSION,
+      displayCurrency: cfg.displayCurrency,
+      rate: cfg.rate,
+      rateUpdatedAt: cfg.rateUpdatedAt,
+      offPeakStart: cfg.offPeakStart,
+      offPeakEnd: cfg.offPeakEnd,
+      language: cfg.language,
+      hideWallet: cfg.hideWallet,
+      hideLine: cfg.hideLine,
+      budget: cfg.budget,
+    }
+  }
+
+  function fullConfig() {
+    return { ...publicConfig(), prices: runtime.config.prices }
+  }
+
+  function usedModels() {
+    const set = new Set(Object.keys(runtime.config.prices || {}))
+    for (const key of Object.keys(runtime.totals.models || {})) set.add(key)
+    return [...set].sort()
+  }
+
+  /* -------- config persistence -------- */
+
+  function saveConfig(patch) {
+    const cfg = runtime.config
+    if (patch && typeof patch === 'object') {
+      if (patch.displayCurrency === 'USD' || patch.displayCurrency === 'CNY') cfg.displayCurrency = patch.displayCurrency
+      if (patch.rate !== undefined) {
+        const rate = num(patch.rate)
+        if (rate !== null && rate > 0) {
+          cfg.rate = rate
+          cfg.rateUpdatedAt = new Date().toISOString()
+        }
+      }
+      if (patch.offPeakStart !== undefined) cfg.offPeakStart = String(patch.offPeakStart)
+      if (patch.offPeakEnd !== undefined) cfg.offPeakEnd = String(patch.offPeakEnd)
+      if (patch.language !== undefined) {
+        const language = String(patch.language)
+        if (language === 'auto' || LOCALE_TAG.test(language)) cfg.language = language
+      }
+      if (patch.hideWallet !== undefined) cfg.hideWallet = Boolean(patch.hideWallet)
+      if (patch.hideLine !== undefined) cfg.hideLine = Boolean(patch.hideLine)
+      if (patch.budget !== undefined) cfg.budget = num(patch.budget)
+      if (patch.prices && typeof patch.prices === 'object') {
+        const cleaned = {}
+        for (const [key, row] of Object.entries(patch.prices)) {
+          if (!row || typeof row !== 'object') continue
+          const peak = normalizePrice(row.peak, 'peak')
+          if (!peak) continue
+          const off = normalizePrice(row.off, 'off') || peak
+          cleaned[key] = {
+            currency: row.currency === 'CNY' ? 'CNY' : 'USD',
+            peak: { input: peak.input, output: peak.output, cacheHit: num(row.peak.cacheHit), cacheWrite: num(row.peak.cacheWrite) },
+            off: { input: off.input, output: off.output, cacheHit: num(row.off && row.off.cacheHit), cacheWrite: num(row.off && row.off.cacheWrite) },
+          }
+        }
+        cfg.prices = cleaned
+      }
+    }
+    try {
+      mkdirSync(root, { recursive: true })
+      writeFileSync(configFile, JSON.stringify(cfg, null, 2), 'utf8')
+    } catch (error) {
+      ctx.logger?.warn?.(`model-price: config write failed: ${error?.message || error}`)
+    }
+    return fullConfig()
+  }
+
+  /* -------- HTTP API -------- */
+
+  const api = {
+    async state(payload) {
+      const sessionId = payload && payload.sessionId
+      if (!sessionId) throw new Error('sessionId is required')
+      if (Date.now() - runtime.walletAt > 45000) void refreshWallet()
+      const session = await buildSession(sessionId)
+      return {
+        config: publicConfig(),
+        wallet: walletView(),
+        tariff: isOffPeak(Date.now(), runtime.config) ? 'off' : 'peak',
+        session,
+        allTime: allTimeView(),
+      }
+    },
+    async config() {
+      return { config: fullConfig(), models: usedModels(), allTime: allTimeView() }
+    },
+    async save(payload) {
+      saveConfig(payload || {})
+      if (payload && payload.prices) void refreshWallet()
+      return { config: fullConfig(), models: usedModels(), allTime: allTimeView() }
+    },
+    async wallet() {
+      await refreshWallet()
+      return { wallet: walletView() }
+    },
+    async locales() {
+      return readLocales()
+    },
+    async catalog() {
+      const llm = ctx.get('llm')
+      if (!llm || typeof llm.listProviders !== 'function') return { models: [] }
+      let providers = []
+      try {
+        providers = llm.listProviders() || []
+      } catch {
+        providers = []
+      }
+      const models = []
+      const collect = async (provider) => {
+        try {
+          const listed = await Promise.race([
+            llm.listModels(provider.id),
+            new Promise((resolve) => {
+              const timer = setTimeout(() => resolve([]), 4000)
+              timer.unref?.()
+            }),
+          ])
+          for (const model of listed || []) {
+            if (!model || typeof model.id !== 'string') continue
+            models.push({
+              provider: provider.id,
+              providerName: provider.name || provider.id,
+              model: model.id,
+              name: model.name || model.id,
+            })
+          }
+        } catch {
+          /* a provider without a catalog is simply skipped */
+        }
+      }
+      await Promise.all(providers.map((provider) => collect(provider)))
+      models.sort((a, b) => a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model))
+      return { models }
+    },
+    async reset() {
+      runtime.totals = { since: new Date().toISOString(), models: {} }
+      try {
+        mkdirSync(root, { recursive: true })
+        writeFileSync(totalsFile, JSON.stringify(runtime.totals), 'utf8')
+      } catch {
+        /* ignore */
+      }
+      return { allTime: allTimeView() }
+    },
+  }
+
+  ctx.effect(() => {
+    const dispose = ctx.webServer.register({
+      kind: 'prefix',
+      path: API_PREFIX,
+      handler: async (req, res) => {
+        if (req.method !== 'POST') {
+          json(res, 405, { ok: false, error: 'method not allowed' })
+          return
+        }
+        const url = new URL(req.url || '/', 'http://dsh.internal')
+        const method = url.pathname.startsWith(`${API_PREFIX}/`)
+          ? url.pathname.slice(API_PREFIX.length + 1)
+          : ''
+        if (!method || method.includes('/') || !api[method]) {
+          json(res, 404, { ok: false, error: `unknown method "${method}"` })
+          return
+        }
+        try {
+          const payload = await readJsonBody(req)
+          const value = await api[method](payload)
+          json(res, 200, { ok: true, value })
+        } catch (error) {
+          ctx.logger?.warn?.(`model-price: ${method} failed: ${error?.message || error}`)
+          json(res, 500, { ok: false, error: String(error?.message || error) })
+        }
+      },
+    })
+    return () => dispose()
+  }, 'model-price: http api')
+
+  // Warm the wallet once so the first poll has data.
+  void refreshWallet()
+}
+
+/* ------------------------------------------------------------------ */
+/* persistence helpers                                                 */
+/* ------------------------------------------------------------------ */
+
+function loadConfig(file) {
+  const config = { ...DEFAULTS, prices: {} }
+  try {
+    if (!existsSync(file)) return config
+    const parsed = JSON.parse(readFileSync(file, 'utf8'))
+    if (!parsed || typeof parsed !== 'object') return config
+    for (const key of Object.keys(DEFAULTS)) {
+      if (parsed[key] !== undefined) config[key] = parsed[key]
+    }
+    if (config.displayCurrency !== 'CNY') config.displayCurrency = 'USD'
+    if (!(Number(config.rate) > 0)) config.rate = DEFAULTS.rate
+    if (config.language !== 'auto' && !LOCALE_TAG.test(String(config.language))) config.language = 'auto'
+    config.prices = parsed.prices && typeof parsed.prices === 'object' ? parsed.prices : {}
+  } catch {
+    /* fall back to defaults */
+  }
+  return config
+}
+
+function loadTotals(file) {
+  try {
+    if (!existsSync(file)) return { since: new Date().toISOString(), models: {} }
+    const parsed = JSON.parse(readFileSync(file, 'utf8'))
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.models !== 'object') {
+      return { since: new Date().toISOString(), models: {} }
+    }
+    return {
+      since: typeof parsed.since === 'string' ? parsed.since : new Date().toISOString(),
+      models: parsed.models,
+    }
+  } catch {
+    return { since: new Date().toISOString(), models: {} }
+  }
+}
+
+/**
+ * Scan the plugin's `locale/` directory. Every `<BCP47-tag>.json` file becomes a
+ * selectable language; `name` inside the file is the display name. The scan runs
+ * on each request, so dropping a new file in is enough to offer a new language.
+ */
+function readLocales() {
+  const locales = []
+  const dicts = {}
+  let files = []
+  try {
+    files = readdirSync(LOCALE_DIR)
+  } catch {
+    files = []
+  }
+  for (const file of files) {
+    if (!file.toLowerCase().endsWith('.json')) continue
+    const tag = file.slice(0, -5)
+    if (!LOCALE_FILE_TAG.test(tag)) continue
+    try {
+      const parsed = JSON.parse(readFileSync(join(LOCALE_DIR, file), 'utf8'))
+      const strings = parsed && typeof parsed.strings === 'object' && parsed.strings ? parsed.strings : {}
+      if (Object.keys(strings).length === 0) continue
+      dicts[tag] = strings
+      locales.push({
+        tag,
+        name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : tag,
+      })
+    } catch {
+      /* a malformed locale file is skipped, never fatal */
+    }
+  }
+  locales.sort((a, b) => a.tag.localeCompare(b.tag))
+  return { locales, dicts }
+}
+
+function json(res, status, body) {  const text = JSON.stringify(body)
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+    'content-length': Buffer.byteLength(text),
+  })
+  res.end(text)
+}
+
+async function readJsonBody(req) {
+  const chunks = []
+  for await (const chunk of req) chunks.push(chunk)
+  if (chunks.length === 0) return {}
+  const text = Buffer.concat(chunks).toString('utf8')
+  if (!text.trim()) return {}
+  return JSON.parse(text)
+}
