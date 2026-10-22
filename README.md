@@ -26,11 +26,7 @@ The plugin adds a compact line under the chat composer — `Session: $0.0123 · 
 ### Option 1 — Add Plugin (recommended)
 
 1. Open **Settings → Plugins → Add plugin**.
-2. Paste the package name, a GitHub repository address, or an absolute local path:
-
-   ```
-   dsh-model-price
-   ```
+2. Paste the GitHub repository address (or an absolute local path):
 
    ```
    github:itsbuyru-bit/dsh-model-price
@@ -46,12 +42,11 @@ The plugin adds a compact line under the chat composer — `Session: $0.0123 · 
 
 3. Install, then restart DeepSeek Harness and refresh the page.
 
-> The npm name works after the package is published to the registry (see *Publishing* below); the GitHub forms work immediately for a public repository.
+The plugin is distributed from GitHub; there is no npm registry package.
 
 ### Option 2 — CLI
 
 ```sh
-dsh plugin --profile <your-profile> add dsh-model-price
 dsh plugin --profile <your-profile> add github:itsbuyru-bit/dsh-model-price
 ```
 
@@ -130,13 +125,13 @@ node scripts/check.mjs   # syntax, manifest and locale-parity checks
 
 The plugin is plain JavaScript: `index.js` is the Host half, `client.js` is the browser half, `cordis.patch.yml` inserts the plugin row. There is no build step.
 
-## Publishing
+## Releases and updates
 
-```sh
-npm publish
-```
+Distribution is GitHub-only: **Add Plugin** with `github:itsbuyru-bit/dsh-model-price`
+installs the default branch, and re-installing the bundle picks up new commits.
 
-Before the first publish, make sure the package name is still available on npm and replace the repository owner in `package.json`, `README.md` and `README.ru.md` if the GitHub account differs.
+- Version lives in `package.json` and `CHANGELOG.md`; releases are tagged `vX.Y.Z`.
+- Host changes require reinstalling the bundle; client changes only need a page refresh.
 
 ## License
 
