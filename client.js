@@ -350,6 +350,25 @@ window.__ModuleLoader__.load({
       '.mp-about a{color:var(--dsw-alias-label-primary);text-decoration:underline;text-underline-offset:2px}',
       '.mp-about a:hover{color:var(--dsw-alias-brand-primary)}',
       '.mp-update{color:var(--dsw-alias-state-warn-primary);font-weight:600;margin-bottom:4px}',
+      '.mp-warn{color:var(--dsw-alias-state-warn-primary);font-size:11.5px;font-weight:600}',
+      '.mp-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:20px}',
+      '.mp-modal-card{width:min(440px,100%);max-height:86vh;overflow:auto;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);border-radius:14px;padding:16px 18px 14px;box-shadow:0 18px 50px rgba(0,0,0,.45);color:var(--dsw-alias-label-primary)}',
+      '.mp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}',
+      '.mp-modal-title{margin:0;font-size:16px;font-weight:650;letter-spacing:-.2px}',
+      '.mp-modal-x{width:26px;height:26px;border:0;border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary);font-size:18px;line-height:1;cursor:pointer}',
+      '.mp-modal-x:hover{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary)}',
+      '.mp-modal-text{margin:12px 0 14px;font-size:12.5px;line-height:1.55;color:var(--dsw-alias-label-secondary)}',
+      '.mp-modal-rows{display:flex;flex-direction:column;gap:8px;font-size:12px}',
+      '.mp-modal-row{display:flex;align-items:baseline;gap:10px}',
+      '.mp-modal-row .l{width:132px;flex:none;color:var(--dsw-alias-label-secondary)}',
+      '.mp-modal-row .v{font-weight:600;font-variant-numeric:tabular-nums}',
+      '.mp-modal-divider{height:1px;background:var(--dsw-alias-border-l1);margin:14px 0}',
+      '.mp-modal-section h4{margin:0 0 6px;font-size:13px;font-weight:650}',
+      '.mp-modal-section p{margin:0 0 10px;font-size:11.5px;line-height:1.5;color:var(--dsw-alias-label-secondary)}',
+      '.mp-modal-cmd{display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-base)}',
+      '.mp-modal-cmd code{flex:1;min-width:0;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-primary)}',
+      '.mp-modal-note{margin:10px 0 0;font-size:11px;line-height:1.5;color:var(--dsw-alias-label-secondary)}',
+      '.mp-modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}',
       '.mp-about-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}',
       '.mp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
       '.mp-ok{color:var(--dsw-alias-state-success-primary);font-size:11.5px}',
@@ -816,6 +835,15 @@ window.__ModuleLoader__.load({
       var updateStatusBox = useState('')
       var updateStatus = updateStatusBox[0]
       var setUpdateStatus = updateStatusBox[1]
+      var dialogBox = useState(false)
+      var dialog = dialogBox[0]
+      var setDialog = dialogBox[1]
+      var dialogInfoBox = useState(null)
+      var dialogInfo = dialogInfoBox[0]
+      var setDialogInfo = dialogInfoBox[1]
+      var dialogStatusBox = useState('')
+      var dialogStatus = dialogStatusBox[0]
+      var setDialogStatus = dialogStatusBox[1]
       var localeData = useLocaleData()
 
       var refresh = useCallback(function () {
@@ -846,6 +874,12 @@ window.__ModuleLoader__.load({
 
       useEffect(function () { refresh().catch(function (error) { setDisplayStatus('error:' + String(error.message || error)) }) }, [refresh])
       useEffect(function () { loadLocales(true) }, [])
+      useEffect(function () {
+        if (!dialog) return undefined
+        function onKey(event) { if (event.key === 'Escape') setDialog(false) }
+        document.addEventListener('keydown', onKey)
+        return function () { document.removeEventListener('keydown', onKey) }
+      }, [dialog])
 
       if (!loaded || !draft) {
         return h('div', { className: 'mp-settings' }, h('div', { className: 'mp-muted' }, translator('auto', dshLocale, localeData)('loading')))
@@ -1077,14 +1111,78 @@ window.__ModuleLoader__.load({
         })
       }
 
-      function checkNow() {
-        setUpdateStatus('checking')
-        call('checkUpdate', {}).then(function (value) {
-          setLoaded(Object.assign({}, loaded, { update: value.update }))
-          setUpdateStatus(value.update && value.update.available ? 'found' : 'ok')
-        }).catch(function () {
-          setUpdateStatus('error')
+      function openUpdateDialog() {
+        setDialog(true)
+        setDialogStatus('checking')
+        setDialogInfo(null)
+        call('updateInfo', {}).then(function (value) {
+          setDialogInfo(value)
+          setDialogStatus('ready')
+          setUpdateStatus(value && value.available ? 'found' : 'ok')
+        }).catch(function (error) {
+          setDialogStatus('error:' + String(error.message || error))
         })
+      }
+
+      function closeUpdateDialog() {
+        setDialog(false)
+      }
+
+      function refreshUpdateInfo() {
+        setDialogStatus('checking')
+        call('updateInfo', {}).then(function (value) {
+          setDialogInfo(value)
+          setDialogStatus('ready')
+        }).catch(function (error) {
+          setDialogStatus('error:' + String(error.message || error))
+        })
+      }
+
+      function copyCommand() {
+        var text = (dialogInfo && dialogInfo.command) || ''
+        if (!text) return
+        var done = function () { setDialogStatus('copied') }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () { setDialogStatus('copy-failed') })
+          return
+        }
+        try {
+          var area = document.createElement('textarea')
+          area.value = text
+          document.body.appendChild(area)
+          area.select()
+          document.execCommand('copy')
+          document.body.removeChild(area)
+          done()
+        } catch (error) {
+          setDialogStatus('copy-failed')
+        }
+      }
+
+      function startAutoUpdate() {
+        setDialogStatus('starting')
+        call('update', {}).then(function (value) {
+          if (value && value.started) setDialogStatus('started')
+          else setDialogStatus('manual:' + String((value && value.reason) || 'unknown'))
+        }).catch(function () {
+          // Swapping the bundle can drop the response after the update started.
+          setDialogStatus('started')
+        })
+      }
+
+      function dialogNote() {
+        if (dialogStatus === 'started') return h('span', { className: 'mp-ok' }, t('updateStarted'))
+        if (dialogStatus === 'copied') return h('span', { className: 'mp-ok' }, t('updateCopied'))
+        if (dialogStatus === 'copy-failed') return h('span', { className: 'mp-err' }, t('updateFailed'))
+        if (dialogStatus.indexOf('error:') === 0) return h('span', { className: 'mp-err' }, t('updateFailed') + ': ' + dialogStatus.slice(6))
+        if (dialogStatus === 'starting') return h('span', { className: 'mp-muted' }, t('checking'))
+        if (dialogStatus.indexOf('manual:') === 0) {
+          var reason = dialogStatus.slice(7)
+          if (reason === 'local') return h('span', { className: 'mp-muted' }, t('updateLocalOnly'))
+          if (reason === 'up-to-date') return h('span', { className: 'mp-ok' }, t('upToDate'))
+          return h('span', { className: 'mp-muted' }, t('updateNoManager'))
+        }
+        return null
       }
 
       function addModel() {
@@ -1497,9 +1595,8 @@ window.__ModuleLoader__.load({
             ]),
             h('button', {
               key: 'now', type: 'button', className: 'mp-btn ghost',
-              disabled: updateStatus === 'checking',
               style: { marginLeft: 8, height: 24, padding: '0 8px', fontSize: 11 },
-              onClick: checkNow,
+              onClick: openUpdateDialog,
             }, updateStatus === 'checking' ? t('checking') : t('checkNow')),
             updateStatus === 'ok' ? h('span', { key: 'ok', className: 'mp-ok' }, t('upToDate')) : null,
             updateStatus === 'found' ? h('span', { key: 'found', className: 'mp-update' }, t('updateAvailable')) : null,
@@ -1520,6 +1617,75 @@ window.__ModuleLoader__.load({
             ' · MIT · v' + ((loaded && loaded.config && loaded.config.version) || '1.0.0'),
           ]),
         ]),
+        dialog ? h('div', {
+          className: 'mp-modal',
+          key: 'modal',
+          onClick: function (event) { if (event.target === event.currentTarget) closeUpdateDialog() },
+        }, [
+          h('div', {
+            className: 'mp-modal-card', key: 'card',
+            role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'mp-update-title',
+          }, [
+            h('div', { className: 'mp-modal-head', key: 'head' }, [
+              h('h3', { className: 'mp-modal-title', key: 't', id: 'mp-update-title' }, t('updateTitle')),
+              h('button', {
+                className: 'mp-modal-x', key: 'x', type: 'button',
+                'aria-label': t('close'), onClick: closeUpdateDialog,
+              }, '×'),
+            ]),
+            h('p', { className: 'mp-modal-text', key: 'p' }, t('updateOnlyThis')),
+            h('div', { className: 'mp-modal-rows', key: 'rows' }, [
+              h('div', { className: 'mp-modal-row', key: 'v' }, [
+                h('span', { className: 'l', key: 'l' }, t('updateRunningVersion')),
+                h('span', { className: 'v', key: 'v' }, dialogInfo ? 'v' + dialogInfo.version : '…'),
+              ]),
+              h('div', { className: 'mp-modal-row', key: 'latest' }, [
+                h('span', { className: 'l', key: 'l' }, t('updateLatestVersion')),
+                h('span', { className: 'v', key: 'v' }, dialogInfo && dialogInfo.latest ? 'v' + dialogInfo.latest : '—'),
+                dialogInfo
+                  ? h('span', {
+                    key: 's',
+                    className: dialogInfo.available ? 'mp-warn' : 'mp-ok',
+                  }, dialogInfo.available ? t('updateAvailable') : t('upToDate'))
+                  : null,
+              ]),
+              h('div', { className: 'mp-modal-row', key: 'profile' }, [
+                h('span', { className: 'l', key: 'l' }, t('updateTargetProfile')),
+                h('span', { className: 'v', key: 'v' }, dialogInfo ? dialogInfo.profile : '—'),
+              ]),
+            ]),
+            h('div', { className: 'mp-modal-divider', key: 'd' }),
+            h('div', { className: 'mp-modal-section', key: 'manual' }, [
+              h('h4', { key: 'h' }, t('updateManualTitle')),
+              h('p', { key: 'p' }, t('updateManualText')),
+              h('div', { className: 'mp-modal-cmd', key: 'cmd' }, [
+                h('code', { key: 'c' }, dialogInfo && dialogInfo.command ? dialogInfo.command : '—'),
+                h('button', {
+                  key: 'copy', type: 'button', className: 'mp-btn ghost',
+                  onClick: copyCommand,
+                }, dialogStatus === 'copied' ? t('updateCopied') : t('updateCopy')),
+              ]),
+            ]),
+            dialogInfo && dialogInfo.mode === 'local'
+              ? h('p', { className: 'mp-modal-note', key: 'local' }, t('updateLocalOnly'))
+              : null,
+            dialogNote()
+              ? h('div', { className: 'mp-modal-note', key: 'note' }, dialogNote())
+              : null,
+            h('div', { className: 'mp-modal-foot', key: 'foot' }, [
+              h('button', {
+                className: 'mp-btn ghost', type: 'button',
+                disabled: dialogStatus === 'checking',
+                onClick: refreshUpdateInfo,
+              }, t('updateCheckAgain')),
+              h('button', {
+                className: 'mp-btn pri', type: 'button',
+                disabled: !dialogInfo || !dialogInfo.canAuto || dialogStatus === 'starting' || dialogStatus === 'started',
+                onClick: startAutoUpdate,
+              }, dialogStatus === 'starting' ? t('checking') : t('updateAuto')),
+            ]),
+          ]),
+        ]) : null,
       ])
     }
 

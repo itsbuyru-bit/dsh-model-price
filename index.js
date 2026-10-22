@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   DEFAULT_PEAK_DAYS,
@@ -551,6 +551,93 @@ export function apply(ctx, rawConfig = {}) {
     }
   }
 
+  /* -------- self-update through the profile plugin manager -------- */
+
+  function profileName() {
+    if (process.env.DSH_PROFILE) return process.env.DSH_PROFILE
+    const dir = process.env.DSH_PROFILE_DIR
+    return dir ? basename(dir) : 'desktop'
+  }
+
+  function localPathOf(source) {
+    return String(source || '').replace(/^(link|file):/, '').replace(/\\/g, '/')
+  }
+
+  function isLocalSource(source) {
+    const text = String(source || '')
+    return /^(link|file):/.test(text) || /^([A-Za-z]:[\\/]|\/|\.\.?[\\/])/.test(text)
+  }
+
+  async function bundleFacts() {
+    const manager = ctx.get('pluginManager')
+    if (!manager || typeof manager.listBundles !== 'function') {
+      return { manager: false, source: null, version: PLUGIN_VERSION }
+    }
+    try {
+      const bundles = await manager.listBundles()
+      const own = Array.isArray(bundles) ? bundles.find((entry) => entry && entry.name === 'dsh-model-price') : null
+      return {
+        manager: true,
+        source: own && typeof own.source === 'string' ? own.source : null,
+        version: own && typeof own.version === 'string' ? own.version : PLUGIN_VERSION,
+      }
+    } catch (error) {
+      ctx.logger?.warn?.(`model-price: bundle lookup failed: ${error?.message || error}`)
+      return { manager: true, source: null, version: PLUGIN_VERSION }
+    }
+  }
+
+  /**
+   * Everything the update dialog shows: versions, the install mode, and the
+   * manual command fallback. A `link:`/`file:` install is treated as a local
+   * checkout: the manager must not overwrite the developer's working copy.
+   */
+  async function describeUpdate() {
+    if (Date.now() - runtime.updateAt > 15000) await refreshUpdate(true)
+    const facts = await bundleFacts()
+    const latest = (runtime.update && runtime.update.latest) || null
+    const version = facts.version || PLUGIN_VERSION
+    const available = Boolean(latest && isNewer(latest, version))
+    const local = isLocalSource(facts.source)
+    const path = local ? localPathOf(facts.source) : ''
+    const profile = profileName()
+    const spec = latest ? `github:itsbuyru-bit/dsh-model-price@v${latest}` : 'github:itsbuyru-bit/dsh-model-price'
+    const command = local && path
+      ? `git -C "${path}" pull\ndsh plugin --profile ${profile} add link:${path}`
+      : `dsh plugin --profile ${profile} add ${spec}`
+    return {
+      version,
+      latest,
+      available,
+      profile,
+      local,
+      mode: local ? 'local' : 'remote',
+      source: facts.source,
+      manager: facts.manager,
+      spec,
+      command,
+      canAuto: !local && available && facts.manager,
+      url: (runtime.update && runtime.update.url) || `${REPO_URL}/releases`,
+    }
+  }
+
+  async function startUpdate() {
+    const info = await describeUpdate()
+    if (!info.manager) return { started: false, reason: 'no-manager', info }
+    if (info.mode === 'local') return { started: false, reason: 'local', info }
+    if (!info.available) return { started: false, reason: 'up-to-date', info }
+    const manager = ctx.get('pluginManager')
+    const spec = info.spec
+    // Applying a new bundle layer unloads this very plugin, so the HTTP answer is
+    // sent first and the Host timer owns the installation from here.
+    globalThis.setTimeout(() => {
+      Promise.resolve(manager.installBundle(spec, { saveExact: true }))
+        .then((result) => ctx.logger?.info?.(`model-price: update ${result?.application || 'done'}`))
+        .catch((error) => ctx.logger?.warn?.(`model-price: update failed: ${error?.message || error}`))
+    }, 250)
+    return { started: true, info }
+  }
+
   function publicConfig() {
     const cfg = runtime.config
     return {
@@ -693,6 +780,12 @@ export function apply(ctx, rawConfig = {}) {
     async checkUpdate() {
       await refreshUpdate(true)
       return { update: updateView() }
+    },
+    async updateInfo() {
+      return describeUpdate()
+    },
+    async update() {
+      return startUpdate()
     },
     async locales() {
       return readLocales()

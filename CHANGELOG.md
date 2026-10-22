@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] — 2026-10-22
+
+### Added
+
+- **Check now** now opens an update dialog: running and latest versions, the
+  target profile, **Check again**, a manual command with **Copy command**, and an
+  **Update automatically** action.
+- Automatic update installs the latest release through the profile's
+  `pluginManager.installBundle`. The HTTP answer is sent before the installation
+  starts because applying the new bundle unloads this plugin mid-request.
+- Local `link:` installs are detected and never overwritten: the dialog explains
+  that the working copy is the source and offers the `git pull` + reinstall
+  command instead.
+- Host endpoints `updateInfo` (versions, install mode, profile, manual command)
+  and `update` (starts the installation).
+
+[1.8.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.8.0
+
 ## [1.7.0] — 2026-10-22
 
 ### Added
