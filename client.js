@@ -806,6 +806,7 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'mp-settings' }, [
         h('h2', { key: 't' }, t('settingsTitle')),
         h('p', { className: 'intro', key: 'i' }, t('settingsIntro')),
+        h('p', { className: 'intro', key: 'peak', style: { marginTop: -8 } }, t('peakExplainer')),
         allTime ? h('div', { className: 'mp-card', key: 'sum' }, [
           h('div', { className: 'mp-summary' }, [
             h('div', { key: 'a' }, [

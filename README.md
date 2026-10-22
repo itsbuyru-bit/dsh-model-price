@@ -92,7 +92,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.0.0** |
+| Plugin version | **1.0.1** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to

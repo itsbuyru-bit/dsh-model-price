@@ -56,6 +56,7 @@
     "hide": "隐藏钱包",
     "settingsTitle": "模型与价格",
     "settingsIntro": "每百万 token 的价格。cache hit 价格留空时按输入价格计费；Off-Peak 列留空时使用 Peak 价格。价格会追溯应用到整个会话历史。",
+    "peakExplainer": "Peak 为标准价，Off-Peak 为折扣时段（DeepSeek 默认 16:30–00:30 UTC）。徽标和实际使用的价格列都按该时段判断。",
     "display": "显示",
     "displayCurrency": "显示货币",
     "rateLabel": "每 USD 对应 CNY",

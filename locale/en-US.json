@@ -56,6 +56,7 @@
     "hide": "Hide wallet",
     "settingsTitle": "Models & prices",
     "settingsIntro": "Prices per million tokens. An empty cache-hit price is charged at the input price; an empty Off-Peak column uses the Peak price. Prices are applied retroactively to the whole session history.",
+    "peakExplainer": "Peak is the standard tariff; Off-Peak is the discounted window (DeepSeek default 16:30–00:30 UTC). The badge and the applied price column follow that window.",
     "display": "Display",
     "displayCurrency": "Display currency",
     "rateLabel": "CNY per USD",

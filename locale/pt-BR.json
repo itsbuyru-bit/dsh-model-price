@@ -56,6 +56,7 @@
     "hide": "Ocultar carteira",
     "settingsTitle": "Modelos e preços",
     "settingsIntro": "Preços por milhão de tokens. Um preço de cache hit vazio é cobrado pelo preço de entrada; uma coluna Off-Peak vazia usa o preço Peak. Os preços são aplicados retroativamente a todo o histórico de sessões.",
+    "peakExplainer": "Peak é a tarifa padrão; Off-Peak é a janela com desconto (padrão da DeepSeek: 16:30–00:30 UTC). O selo e a coluna de preços aplicada seguem essa janela.",
     "display": "Exibição",
     "displayCurrency": "Moeda de exibição",
     "rateLabel": "CNY por USD",

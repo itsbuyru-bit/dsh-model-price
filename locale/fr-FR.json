@@ -56,6 +56,7 @@
     "hide": "Masquer le portefeuille",
     "settingsTitle": "Modèles et prix",
     "settingsIntro": "Prix par million de tokens. Un prix cache hit vide est facturé au prix d'entrée ; une colonne Off-Peak vide utilise le prix Peak. Les prix s'appliquent rétroactivement à tout l'historique des sessions.",
+    "peakExplainer": "Peak est le tarif standard ; Off-Peak est la plage remisée (par défaut chez DeepSeek, 16:30–00:30 UTC). Le badge et la colonne de prix appliquée suivent cette plage.",
     "display": "Affichage",
     "displayCurrency": "Devise d'affichage",
     "rateLabel": "CNY par USD",

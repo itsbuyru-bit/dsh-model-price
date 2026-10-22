@@ -56,6 +56,7 @@
     "hide": "지갑 숨기기",
     "settingsTitle": "모델 및 가격",
     "settingsIntro": "백만 토큰당 가격입니다. cache hit 가격이 비어 있으면 입력 가격으로 청구되고, Off-Peak 열이 비어 있으면 Peak 가격을 사용합니다. 가격은 전체 세션 기록에 소급 적용됩니다.",
+    "peakExplainer": "Peak는 일반 요금, Off-Peak는 할인 시간대입니다(DeepSeek 기본 16:30–00:30 UTC). 배지와 적용되는 가격 열이 이 시간대를 따릅니다.",
     "display": "표시",
     "displayCurrency": "표시 통화",
     "rateLabel": "USD당 CNY",

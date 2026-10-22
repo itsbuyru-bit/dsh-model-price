@@ -56,6 +56,7 @@
     "hide": "Wallet ausblenden",
     "settingsTitle": "Modelle und Preise",
     "settingsIntro": "Preise pro Million Tokens. Ein leerer Preis für cache hit wird zum Eingabepreis abgerechnet; eine leere Off-Peak-Spalte verwendet den Peak-Preis. Preise werden rückwirkend auf den gesamten Sitzungsverlauf angewendet.",
+    "peakExplainer": "Peak ist der Standardtarif, Off-Peak das Rabattfenster (bei DeepSeek standardmäßig 16:30–00:30 UTC). Badge und verwendete Preisspalte folgen diesem Fenster.",
     "display": "Anzeige",
     "displayCurrency": "Anzeigewährung",
     "rateLabel": "CNY pro USD",
