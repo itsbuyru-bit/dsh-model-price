@@ -1,6 +1,6 @@
 # dsh-model-price — цены API для DeepSeek Harness
 
-[English](README.md) | **Русский**
+[English](README.md) | **Русский** | [Сайт](https://itsbuyru-bit.github.io/dsh-model-price/ru/)
 
 [![CI](https://github.com/itsbuyru-bit/dsh-model-price/actions/workflows/ci.yml/badge.svg)](https://github.com/itsbuyru-bit/dsh-model-price/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
