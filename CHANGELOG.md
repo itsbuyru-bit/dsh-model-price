@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] — 2026-10-22
+
+### Fixed
+
+- The “Check now” button stays available when the automatic update check is
+  disabled; a manual check still queries GitHub and reports the result.
+
+[1.3.1]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.3.1
+
 ## [1.3.0] — 2026-10-22
 
 ### Added

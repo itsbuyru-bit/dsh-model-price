@@ -1159,7 +1159,7 @@ window.__ModuleLoader__.load({
             ]),
             h('button', {
               key: 'now', type: 'button', className: 'mp-btn ghost',
-              disabled: updateStatus === 'checking' || !draft.checkUpdates,
+              disabled: updateStatus === 'checking',
               style: { marginLeft: 8, height: 24, padding: '0 8px', fontSize: 11 },
               onClick: checkNow,
             }, updateStatus === 'checking' ? t('checking') : t('checkNow')),
@@ -1168,7 +1168,7 @@ window.__ModuleLoader__.load({
             updateStatus === 'error' ? h('span', { key: 'err', className: 'mp-err' }, t('loadFailed')) : null,
             h('div', { key: 'hint', style: { fontSize: 10.5, marginTop: 2, flexBasis: '100%' } }, t('checkUpdatesHint')),
           ]),
-          loaded && loaded.update && loaded.update.enabled && loaded.update.available
+          loaded && loaded.update && loaded.update.available
             ? h('div', { className: 'mp-update', key: 'upd' }, [
               t('updateAvailable') + ': v' + loaded.update.latest + ' · ',
               h('a', { key: 'rel', href: loaded.update.url, target: '_blank', rel: 'noopener noreferrer' }, loaded.update.url),

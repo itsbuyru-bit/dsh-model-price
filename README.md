@@ -97,7 +97,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.3.0** |
+| Plugin version | **1.3.1** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -339,7 +339,8 @@ push and pull request.
 - Distribution is GitHub-only. Re-installing the bundle from
   `github:itsbuyru-bit/dsh-model-price` picks up the default branch.
 - The About block shows **Update available** when a newer GitHub release exists.
-  The plugin only reports it: install the new tag with
+  The toggle controls only the automatic 6-hour check; **Check now** works at
+  any time. The plugin only reports: install the new tag with
   `github:itsbuyru-bit/dsh-model-price#vX.Y.Z` (or reinstall the bundle).
 - Version lives in `package.json` and `CHANGELOG.md`; releases are tagged
   `vX.Y.Z`.

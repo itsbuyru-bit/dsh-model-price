@@ -91,7 +91,7 @@
     "settingsNav": "Modèles et prix",
     "about": "À propos",
     "checkUpdatesLabel": "Rechercher des mises à jour",
-    "checkUpdatesHint": "Une requête vers GitHub toutes les 6 heures ; aucune autre donnée n’est envoyée.",
+    "checkUpdatesHint": "Vérification automatique : une requête vers GitHub toutes les 6 heures. Le bouton vérifie manuellement à tout moment.",
     "updateAvailable": "Mise à jour disponible",
     "checkNow": "Vérifier maintenant",
     "checking": "Vérification…",

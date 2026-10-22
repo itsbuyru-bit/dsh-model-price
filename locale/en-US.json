@@ -91,7 +91,7 @@
     "settingsNav": "Models & prices",
     "about": "About",
     "checkUpdatesLabel": "Check for updates",
-    "checkUpdatesHint": "One request to GitHub every 6 hours; no other data is sent.",
+    "checkUpdatesHint": "Automatic check: one request to GitHub every 6 hours. The button checks manually at any time.",
     "updateAvailable": "Update available",
     "checkNow": "Check now",
     "checking": "Checking…",

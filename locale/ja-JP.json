@@ -91,7 +91,7 @@
     "settingsNav": "モデルと料金",
     "about": "このプラグインについて",
     "checkUpdatesLabel": "更新を確認",
-    "checkUpdatesHint": "6 時間ごとに GitHub へ 1 回リクエストします。他のデータは送信しません。",
+    "checkUpdatesHint": "自動確認は 6 時間ごとに GitHub へ 1 回。ボタンでいつでも手動確認できます。",
     "updateAvailable": "更新があります",
     "checkNow": "今すぐ確認",
     "checking": "確認中…",

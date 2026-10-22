@@ -481,10 +481,8 @@ export function apply(ctx, rawConfig = {}) {
   }
 
   async function refreshUpdate(force) {
-    if (!runtime.config.checkUpdates) {
-      runtime.update = null
-      return
-    }
+    // `force` is the manual button: it must work even when the automatic check is off.
+    if (!force && !runtime.config.checkUpdates) return
     if (!force && Date.now() - runtime.updateAt < UPDATE_INTERVAL) return
     if (runtime.updateBusy) return
     runtime.updateBusy = true

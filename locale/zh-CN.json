@@ -91,7 +91,7 @@
     "settingsNav": "模型与价格",
     "about": "关于",
     "checkUpdatesLabel": "检查更新",
-    "checkUpdatesHint": "每 6 小时向 GitHub 发送一次请求，不发送其他数据。",
+    "checkUpdatesHint": "自动检查：每 6 小时向 GitHub 发送一次请求。按钮可随时手动检查。",
     "updateAvailable": "有可用更新",
     "checkNow": "立即检查",
     "checking": "检查中…",
