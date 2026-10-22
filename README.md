@@ -332,6 +332,8 @@ push and pull request.
   `github:itsbuyru-bit/dsh-model-price` picks up the default branch.
 - Version lives in `package.json` and `CHANGELOG.md`; releases are tagged
   `vX.Y.Z`.
+- Pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml` and publishes a
+  GitHub Release with generated notes.
 - Host changes require reinstalling the bundle; client changes only need a page
   refresh.
 - Settings and totals survive updates; they are not part of the package.
