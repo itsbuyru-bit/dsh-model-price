@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-10-22
+
+### Changed
+
+- The “Check for updates” toggle moved from the Display block to the About
+  block and now saves immediately, without the Apply button.
+
+[1.1.1]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.1.1
+
 ## [1.1.0] — 2026-10-22
 
 ### Added

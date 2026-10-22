@@ -230,6 +230,7 @@ window.__ModuleLoader__.load({
       '.mp-about a{color:var(--dsw-alias-label-primary);text-decoration:underline;text-underline-offset:2px}',
       '.mp-about a:hover{color:var(--dsw-alias-brand-primary)}',
       '.mp-update{color:var(--dsw-alias-state-warn-primary);font-weight:600;margin-bottom:4px}',
+      '.mp-about-toggle{margin-bottom:8px}',
       '.mp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
       '.mp-ok{color:var(--dsw-alias-state-success-primary);font-size:11.5px}',
       '.mp-err{color:var(--dsw-alias-state-error-primary);font-size:11.5px}',
@@ -785,6 +786,16 @@ window.__ModuleLoader__.load({
         })
       }
 
+      function toggleUpdates(event) {
+        var next = event.target.checked
+        setDraft(Object.assign({}, draft, { checkUpdates: next }))
+        call('save', { checkUpdates: next }).then(function (value) {
+          setLoaded(value)
+        }).catch(function () {
+          setDraft(Object.assign({}, draft, { checkUpdates: !next }))
+        })
+      }
+
       function addModel() {
         var provider = add.provider.trim()
         var model = add.model.trim()
@@ -898,16 +909,6 @@ window.__ModuleLoader__.load({
                   onChange: function (event) { field('hideLine', event.target.checked) },
                 }),
                 h('span', { key: 's' }, t('hideLineHint')),
-              ]),
-            ]),
-            h('div', { className: 'mp-field', key: 'upd' }, [
-              h('label', { key: 'l' }, t('checkUpdatesLabel')),
-              h('label', { key: 'cb', style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } }, [
-                h('input', {
-                  key: 'i', type: 'checkbox', checked: draft.checkUpdates,
-                  onChange: function (event) { field('checkUpdates', event.target.checked) },
-                }),
-                h('span', { key: 's' }, t('checkUpdatesHint')),
               ]),
             ]),
           ]),
@@ -1038,6 +1039,19 @@ window.__ModuleLoader__.load({
         ]),
         h('div', { className: 'mp-about', key: 'about' }, [
           h('div', { className: 'mp-section', key: 'h', style: { marginTop: 0 } }, t('about')),
+          h('div', { className: 'mp-about-toggle', key: 'chk' }, [
+            h('label', {
+              key: 'l',
+              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
+            }, [
+              h('input', {
+                key: 'i', type: 'checkbox', checked: draft.checkUpdates,
+                onChange: toggleUpdates,
+              }),
+              h('span', { key: 's' }, t('checkUpdatesLabel')),
+            ]),
+            h('div', { key: 'hint', style: { fontSize: 10.5, marginTop: 2 } }, t('checkUpdatesHint')),
+          ]),
           loaded && loaded.update && loaded.update.enabled && loaded.update.available
             ? h('div', { className: 'mp-update', key: 'upd' }, [
               t('updateAvailable') + ': v' + loaded.update.latest + ' · ',

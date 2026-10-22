@@ -94,7 +94,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.1.0** |
+| Plugin version | **1.1.1** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -289,8 +289,8 @@ page. Missing keys fall back to `en-US`, then to the key name.
 
 There are no analytics and no telemetry. The only outbound requests are the
 account balance call made by the Harness itself and the optional update check;
-disable it in **Settings → Models & prices → Check for updates**. The FX rate is
-manual by design.
+disable it in **Settings → Models & prices → About → Check for updates**. The
+FX rate is manual by design.
 
 ---
 
