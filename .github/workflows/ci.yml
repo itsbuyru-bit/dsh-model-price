@@ -22,3 +22,7 @@ jobs:
         run: npm test
       - name: Lint workflows
         uses: raven-actions/actionlint@v2
+        with:
+          # The awk program in release.yml is single-quoted on purpose; shellcheck
+          # reports a false-positive SC2016 for it, so only actionlint runs.
+          shellcheck: false
