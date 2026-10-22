@@ -19,6 +19,7 @@ jobs:
       - name: Compose release notes from CHANGELOG.md
         run: |
           TAG="${GITHUB_REF_NAME#v}"
+          # shellcheck disable=SC2016 # the awk program must keep its own $0/$1
           awk -v tag="$TAG" '
             index($0, "## [" tag "]") == 1 { print "## " tag; inside = 1; next }
             inside && index($0, "## [") == 1 { exit }
