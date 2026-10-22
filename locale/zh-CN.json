@@ -56,7 +56,7 @@
     "hide": "隐藏钱包",
     "settingsTitle": "模型与价格",
     "settingsIntro": "每百万 token 的价格。cache hit 价格留空时按输入价格计费；Off-Peak 列留空时使用 Peak 价格。价格会追溯应用到整个会话历史。",
-    "peakExplainer": "Peak 为标准价，Off-Peak 为折扣时段（DeepSeek 默认 16:30–00:30 UTC）。徽标和实际使用的价格列都按该时段判断。",
+    "peakExplainer": "高峰时段为 UTC 01:00–04:00 和 06:00–10:00，周一至周五，中国法定节假日除外。其余时间（夜间、周末和节假日）均为低谷时段，按高峰价格的一半计费。",
     "display": "显示",
     "displayCurrency": "显示货币",
     "rateLabel": "每 USD 对应 CNY",
@@ -102,6 +102,11 @@
     "bestTimeNow": "当前为 Off-Peak，至 {time}（本地时间）",
     "bestTimeIn": "Off-Peak 将在 {duration} 后开始 · 本地 {start}–{end}",
     "modelsSynced": "已同步：{n}",
-    "loadModelsHint": "列表与 Models 设置同步；未配置的模型会被移除。"
+    "loadModelsHint": "列表与 Models 设置同步；未配置的模型会被移除。",
+    "peakWindowsLabel": "高峰时段（UTC）",
+    "peakWindowsHint": "用逗号分隔的区间，例如 01:00-04:00, 06:00-10:00。区间之外均为低谷。",
+    "peakDaysLabel": "高峰日（UTC）",
+    "holidaysLabel": "中国法定节假日",
+    "holidaysHint": "YYYY-MM-DD，用逗号分隔。这些日期全天按低谷计费。"
   }
 }

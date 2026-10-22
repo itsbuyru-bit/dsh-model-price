@@ -48,21 +48,32 @@ test('priceOf falls back from Off-Peak to the Peak row', () => {
   assert.equal(priceOf(config, 'unknown/model'), null)
 })
 
-test('isOffPeak handles a window that crosses UTC midnight', () => {
-  const config = { offPeakStart: '16:30', offPeakEnd: '00:30' }
+test('isOffPeak follows the two peak windows on a weekday', () => {
+  const config = { peakWindows: '01:00-04:00, 06:00-10:00', peakDays: [1, 2, 3, 4, 5], holidays: [] }
   const at = (iso) => Date.parse(iso)
-  assert.equal(isOffPeak(at('2026-10-22T16:29:00Z'), config), false)
-  assert.equal(isOffPeak(at('2026-10-22T16:30:00Z'), config), true)
-  assert.equal(isOffPeak(at('2026-10-23T00:29:00Z'), config), true)
-  assert.equal(isOffPeak(at('2026-10-23T00:30:00Z'), config), false)
+  // 2026-10-22 is a Thursday.
+  assert.equal(isOffPeak(at('2026-10-22T00:59:00Z'), config), true)
+  assert.equal(isOffPeak(at('2026-10-22T01:00:00Z'), config), false)
+  assert.equal(isOffPeak(at('2026-10-22T03:59:00Z'), config), false)
+  assert.equal(isOffPeak(at('2026-10-22T04:00:00Z'), config), true)
+  assert.equal(isOffPeak(at('2026-10-22T05:59:00Z'), config), true)
+  assert.equal(isOffPeak(at('2026-10-22T06:00:00Z'), config), false)
+  assert.equal(isOffPeak(at('2026-10-22T09:59:00Z'), config), false)
+  assert.equal(isOffPeak(at('2026-10-22T10:00:00Z'), config), true)
 })
 
-test('isOffPeak handles a same-day window', () => {
-  const config = { offPeakStart: '09:00', offPeakEnd: '10:00' }
-  assert.equal(isOffPeak(Date.parse('2026-10-22T08:59:00Z'), config), false)
-  assert.equal(isOffPeak(Date.parse('2026-10-22T09:00:00Z'), config), true)
-  assert.equal(isOffPeak(Date.parse('2026-10-22T09:59:00Z'), config), true)
-  assert.equal(isOffPeak(Date.parse('2026-10-22T10:00:00Z'), config), false)
+test('isOffPeak treats weekends and Chinese holidays as fully Off-Peak', () => {
+  const config = { peakWindows: '01:00-04:00, 06:00-10:00', peakDays: [1, 2, 3, 4, 5], holidays: ['2026-10-23'] }
+  // 2026-10-24 is a Saturday, 2026-10-23 a Friday listed as a holiday.
+  assert.equal(isOffPeak(Date.parse('2026-10-24T02:00:00Z'), config), true)
+  assert.equal(isOffPeak(Date.parse('2026-10-23T02:00:00Z'), config), true)
+  assert.equal(isOffPeak(Date.parse('2026-10-22T02:00:00Z'), config), false)
+})
+
+test('isOffPeak falls back to the documented schedule for an empty config', () => {
+  // Thursday 02:00 UTC is Peak, Thursday 23:00 UTC is Off-Peak.
+  assert.equal(isOffPeak(Date.parse('2026-10-22T02:00:00Z'), {}), false)
+  assert.equal(isOffPeak(Date.parse('2026-10-22T23:00:00Z'), {}), true)
 })
 
 test('convert uses the manual rate in both directions', () => {

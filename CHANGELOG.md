@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-10-22
+
+### Changed
+
+- Peak schedule now follows the published DeepSeek pricing: Peak is 01:00–04:00
+  and 06:00–10:00 UTC, Monday–Friday, excluding Chinese public holidays. Every
+  other hour, including weekends and holidays, is Off-Peak.
+- Settings replace the single Off-Peak window with editable Peak windows, Peak
+  weekdays and a holiday list.
+- The best-time block now finds the current or next Off-Peak block across days
+  instead of assuming one window per day.
+
+### Fixed
+
+- Weekend and holiday settlements are no longer billed at the Peak price.
+
+[1.5.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.5.0
+
 ## [1.4.1] — 2026-10-22
 
 ### Added

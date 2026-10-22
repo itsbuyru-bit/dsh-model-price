@@ -56,7 +56,7 @@
     "hide": "Wallet ausblenden",
     "settingsTitle": "Modelle und Preise",
     "settingsIntro": "Preise pro Million Tokens. Ein leerer Preis für cache hit wird zum Eingabepreis abgerechnet; eine leere Off-Peak-Spalte verwendet den Peak-Preis. Preise werden rückwirkend auf den gesamten Sitzungsverlauf angewendet.",
-    "peakExplainer": "Peak ist der Standardtarif, Off-Peak das Rabattfenster (bei DeepSeek standardmäßig 16:30–00:30 UTC). Badge und verwendete Preisspalte folgen diesem Fenster.",
+    "peakExplainer": "Peak-Zeiten sind 01:00–04:00 und 06:00–10:00 UTC, Montag bis Freitag, außer an chinesischen Feiertagen. Alles andere (Nächte, Wochenenden, Feiertage) ist Off-Peak zum halben Peak-Preis.",
     "display": "Anzeige",
     "displayCurrency": "Anzeigewährung",
     "rateLabel": "CNY pro USD",
@@ -102,6 +102,11 @@
     "bestTimeNow": "Jetzt Off-Peak, bis {time} (Ortszeit)",
     "bestTimeIn": "Off-Peak in {duration} · {start}–{end} Ortszeit",
     "modelsSynced": "Synchronisiert: {n}",
-    "loadModelsHint": "Die Liste entspricht Einstellungen → Models; nicht konfigurierte Modelle werden entfernt."
+    "loadModelsHint": "Die Liste entspricht Einstellungen → Models; nicht konfigurierte Modelle werden entfernt.",
+    "peakWindowsLabel": "Peak-Fenster (UTC)",
+    "peakWindowsHint": "Kommagetrennte Bereiche, z. B. 01:00-04:00, 06:00-10:00. Außerhalb davon gilt Off-Peak.",
+    "peakDaysLabel": "Peak-Tage (UTC)",
+    "holidaysLabel": "Chinesische Feiertage",
+    "holidaysHint": "YYYY-MM-DD, kommagetrennt. An diesen Tagen gilt durchgehend Off-Peak."
   }
 }

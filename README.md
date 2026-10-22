@@ -99,8 +99,8 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
   that list disappear from the price table with their prices.
 - **Localized** — 9 bundled languages with automatic discovery of new locale
   files.
-- **Best time** — the popover shows the Off-Peak window in local time and a
-  countdown until it starts (or until it ends, when already active).
+- **Best time** — the popover shows the current or next Off-Peak block in local
+  time and a countdown until it starts (or until it ends, when already active).
 - **Update indicator** — optional check of the latest GitHub release (at most
   once every 6 hours), a **Check now** button and a link to the newer release in
   the About block.
@@ -115,7 +115,7 @@ does not estimate tokens, does not rewrite logs, and does not block requests.
 | DeepSeek Harness | **0.2.x** — tested on **0.2.1-rc.2** (Desktop, Windows) |
 | Profile | `desktop` (Web/Desktop); any profile that mounts the Web UI |
 | Node.js | bundled with DSH, **22.5+** |
-| Plugin version | **1.4.1** |
+| Plugin version | **1.5.0** |
 
 The plugin is not gated on an exact Harness version. If a future release
 renames a slot, a projection key or a service, the affected part degrades to
@@ -256,7 +256,7 @@ Child sessions are included while they are live and are shown separately.
 | Empty Off-Peak column | Uses the Peak price |
 | Missing input or output price | Model is unpriced; session total shows `?` |
 | Price currency ≠ display currency | Converted with the manual rate |
-| Off-Peak window | Editable in UTC; DeepSeek default 16:30–00:30 |
+| Peak schedule | Editable UTC windows and weekdays; DeepSeek default 01:00–04:00 and 06:00–10:00, Monday–Friday, excluding holidays |
 | Price edits | Recalculate the visible history (retroactive) |
 | Budget | A display fallback only; no limits and no blocking |
 
@@ -339,7 +339,7 @@ dsh-model-price/
 ├── lib/pricing.js           # Pure pricing helpers (tested, shipped)
 ├── cordis.patch.yml         # Inserts the plugin row
 ├── icon.svg                 # Plugin icon
-├── locale/                  # 9 BCP 47 locale files (97 keys each)
+├── locale/                  # 9 BCP 47 locale files (102 keys each)
 ├── test/pricing.test.mjs    # node:test unit suite
 ├── docs/                    # Architecture, translation guide, images
 ├── site/                    # Static landing page (GitHub Pages)
@@ -373,8 +373,8 @@ The check validates the manifest, runs `node --check` on the Host, Client and
 `locale` field, key set, empty values and `{placeholder}` preservation.
 
 The unit suite covers the pure pricing layer: per-million costs, cache-hit and
-cache-write fallbacks, Off-Peak window maths (including windows that cross UTC
-midnight), currency conversion, release comparison, and extraction of the model
+cache-write fallbacks, Peak-window and weekday maths, holiday exclusion,
+currency conversion, release comparison, and extraction of the model
 list the user bound in **Settings → Models**. CI runs both commands on every push
 and pull request.
 

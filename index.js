@@ -3,9 +3,8 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  DEFAULT_OFF_END,
-  DEFAULT_OFF_START,
-  clockMinutes,
+  DEFAULT_PEAK_DAYS,
+  DEFAULT_PEAK_WINDOWS,
   configuredSetup,
   convert,
   costOf,
@@ -15,7 +14,6 @@ import {
   normalizePrice,
   num,
   priceOf,
-  windowOf,
 } from './lib/pricing.js'
 
 export const inject = ['sessionProjections', 'webServer', 'sessions', 'agents']
@@ -38,8 +36,9 @@ const DEFAULTS = {
   displayCurrency: 'USD',
   rate: 7.1,
   rateUpdatedAt: null,
-  offPeakStart: DEFAULT_OFF_START,
-  offPeakEnd: DEFAULT_OFF_END,
+  peakWindows: DEFAULT_PEAK_WINDOWS,
+  peakDays: DEFAULT_PEAK_DAYS.slice(),
+  holidays: [],
   language: 'auto',
   hideWallet: false,
   hideLine: false,
@@ -452,8 +451,9 @@ export function apply(ctx, rawConfig = {}) {
       displayCurrency: cfg.displayCurrency,
       rate: cfg.rate,
       rateUpdatedAt: cfg.rateUpdatedAt,
-      offPeakStart: cfg.offPeakStart,
-      offPeakEnd: cfg.offPeakEnd,
+      peakWindows: cfg.peakWindows,
+      peakDays: cfg.peakDays,
+      holidays: cfg.holidays,
       language: cfg.language,
       hideWallet: cfg.hideWallet,
       hideLine: cfg.hideLine,
@@ -486,8 +486,14 @@ export function apply(ctx, rawConfig = {}) {
           cfg.rateUpdatedAt = new Date().toISOString()
         }
       }
-      if (patch.offPeakStart !== undefined) cfg.offPeakStart = String(patch.offPeakStart)
-      if (patch.offPeakEnd !== undefined) cfg.offPeakEnd = String(patch.offPeakEnd)
+      if (patch.peakWindows !== undefined) cfg.peakWindows = String(patch.peakWindows)
+      if (Array.isArray(patch.peakDays)) {
+        const days = patch.peakDays.map((day) => Number(day)).filter((day) => Number.isInteger(day) && day >= 1 && day <= 7)
+        cfg.peakDays = [...new Set(days)].sort((a, b) => a - b)
+      }
+      if (Array.isArray(patch.holidays)) {
+        cfg.holidays = [...new Set(patch.holidays.map((day) => String(day).trim()).filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(day)))].sort()
+      }
       if (patch.language !== undefined) {
         const language = String(patch.language)
         if (language === 'auto' || LOCALE_TAG.test(language)) cfg.language = language
@@ -700,6 +706,9 @@ function loadConfig(file) {
     if (config.displayCurrency !== 'CNY') config.displayCurrency = 'USD'
     if (!(Number(config.rate) > 0)) config.rate = DEFAULTS.rate
     if (config.language !== 'auto' && !LOCALE_TAG.test(String(config.language))) config.language = 'auto'
+    if (typeof config.peakWindows !== 'string') config.peakWindows = DEFAULTS.peakWindows
+    if (!Array.isArray(config.peakDays) || config.peakDays.length === 0) config.peakDays = DEFAULTS.peakDays.slice()
+    if (!Array.isArray(config.holidays)) config.holidays = []
     config.prices = parsed.prices && typeof parsed.prices === 'object' ? parsed.prices : {}
   } catch {
     /* fall back to defaults */

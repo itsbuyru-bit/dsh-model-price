@@ -56,7 +56,7 @@
     "hide": "Ocultar carteira",
     "settingsTitle": "Modelos e preços",
     "settingsIntro": "Preços por milhão de tokens. Um preço de cache hit vazio é cobrado pelo preço de entrada; uma coluna Off-Peak vazia usa o preço Peak. Os preços são aplicados retroativamente a todo o histórico de sessões.",
-    "peakExplainer": "Peak é a tarifa padrão; Off-Peak é a janela com desconto (padrão da DeepSeek: 16:30–00:30 UTC). O selo e a coluna de preços aplicada seguem essa janela.",
+    "peakExplainer": "Os horários de pico são 01:00–04:00 e 06:00–10:00 UTC, de segunda a sexta, exceto feriados chineses. Todo o resto (noites, fins de semana e feriados) é Off-Peak pela metade do preço de pico.",
     "display": "Exibição",
     "displayCurrency": "Moeda de exibição",
     "rateLabel": "CNY por USD",
@@ -102,6 +102,11 @@
     "bestTimeNow": "Off-Peak agora, até {time} (horário local)",
     "bestTimeIn": "Off-Peak em {duration} · {start}–{end} local",
     "modelsSynced": "Sincronizado: {n}",
-    "loadModelsHint": "A lista reflete Configurações → Models; modelos não configurados são removidos."
+    "loadModelsHint": "A lista reflete Configurações → Models; modelos não configurados são removidos.",
+    "peakWindowsLabel": "Janelas de pico (UTC)",
+    "peakWindowsHint": "Intervalos separados por vírgula, por exemplo 01:00-04:00, 06:00-10:00. Fora deles tudo é Off-Peak.",
+    "peakDaysLabel": "Dias de pico (UTC)",
+    "holidaysLabel": "Feriados chineses",
+    "holidaysHint": "YYYY-MM-DD separados por vírgula. Essas datas são Off-Peak o dia inteiro."
   }
 }

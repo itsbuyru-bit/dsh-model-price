@@ -56,7 +56,7 @@
     "hide": "ウォレットを隠す",
     "settingsTitle": "モデルと料金",
     "settingsIntro": "100万トークンあたりの価格。cache hit 価格が空の場合は入力価格で計算され、Off-Peak 列が空の場合は Peak 価格を使用します。価格はセッション履歴全体に遡って適用されます。",
-    "peakExplainer": "Peak は通常料金、Off-Peak は割引時間帯です（DeepSeek の既定は 16:30–00:30 UTC）。バッジと適用される料金列はこの時間帯に従います。",
+    "peakExplainer": "ピーク時間は UTC 01:00–04:00 と 06:00–10:00（月曜〜金曜、中国の祝日を除く）。それ以外（夜間・週末・祝日）はすべてオフピークで、ピーク料金の半額です。",
     "display": "表示",
     "displayCurrency": "表示通貨",
     "rateLabel": "1 USD あたりの CNY",
@@ -102,6 +102,11 @@
     "bestTimeNow": "現在 Off-Peak（{time} まで・現地時間）",
     "bestTimeIn": "Off-Peak は {duration} 後に開始 · 現地 {start}–{end}",
     "modelsSynced": "同期済み: {n}",
-    "loadModelsHint": "リストは Models 設定と同期し、未設定のモデルは削除されます。"
+    "loadModelsHint": "リストは Models 設定と同期し、未設定のモデルは削除されます。",
+    "peakWindowsLabel": "ピーク時間帯（UTC）",
+    "peakWindowsHint": "カンマ区切りの範囲。例: 01:00-04:00, 06:00-10:00。範囲外はすべてオフピーク。",
+    "peakDaysLabel": "ピーク曜日（UTC）",
+    "holidaysLabel": "中国の祝日",
+    "holidaysHint": "YYYY-MM-DD をカンマ区切りで。これらの日は終日オフピーク。"
   }
 }

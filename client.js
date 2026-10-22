@@ -155,6 +155,21 @@ window.__ModuleLoader__.load({
       return hour * 60 + minute
     }
 
+    /** Short weekday names for 1=Mon … 7=Sun, localized by the browser. */
+    function weekdayNames(localeTag) {
+      var names = []
+      for (var index = 0; index < 7; index += 1) {
+        // 2024-01-01 is a Monday.
+        var date = new Date(Date.UTC(2024, 0, 1 + index))
+        try {
+          names.push(date.toLocaleDateString(localeTag || 'en-US', { weekday: 'short', timeZone: 'UTC' }))
+        } catch (error) {
+          names.push(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index])
+        }
+      }
+      return names
+    }
+
     function clockText(date, localeTag) {
       try {
         return date.toLocaleTimeString(localeTag || 'en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -182,29 +197,61 @@ window.__ModuleLoader__.load({
       return parts.join(' ')
     }
 
-    /** The next Off-Peak window in local time, from the UTC-configured boundaries. */
+    /** Peak schedule: 01:00-04:00 and 06:00-10:00 UTC, Mon-Fri, minus holidays. */
+    function peakWindowsOf(config) {
+      var text = config && config.peakWindows ? String(config.peakWindows) : '01:00-04:00, 06:00-10:00'
+      var windows = []
+      text.split(/[,;\n]+/).forEach(function (part) {
+        var match = /^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*$/.exec(part)
+        if (!match) return
+        var start = parseClock(match[1] + ':' + match[2], -1)
+        var end = parseClock(match[3] + ':' + match[4], -1)
+        if (start < 0 || end < 0) return
+        windows.push({ start: start, end: end })
+      })
+      if (windows.length === 0) windows = [{ start: 60, end: 240 }, { start: 360, end: 600 }]
+      return windows
+    }
+
+    function peakDaysOf(config) {
+      var days = config && Array.isArray(config.peakDays) ? config.peakDays : [1, 2, 3, 4, 5]
+      var normalized = days.map(Number).filter(function (day) { return day >= 1 && day <= 7 })
+      return normalized.length > 0 ? normalized : [1, 2, 3, 4, 5]
+    }
+
+    function isHoliday(date, config) {
+      var list = config && Array.isArray(config.holidays) ? config.holidays : []
+      var ymd = date.toISOString().slice(0, 10)
+      return list.indexOf(ymd) !== -1
+    }
+
+    function isPeakAt(ms, config) {
+      var date = new Date(ms)
+      if (isHoliday(date, config)) return false
+      var isoDay = date.getUTCDay() === 0 ? 7 : date.getUTCDay()
+      if (peakDaysOf(config).indexOf(isoDay) === -1) return false
+      var minute = date.getUTCHours() * 60 + date.getUTCMinutes()
+      return peakWindowsOf(config).some(function (window) {
+        return window.start <= window.end
+          ? minute >= window.start && minute < window.end
+          : minute >= window.start || minute < window.end
+      })
+    }
+
+    /** The current or next Off-Peak block, as absolute Date objects. */
     function cheapWindowInfo(config, nowMs) {
-      var startMin = parseClock(config.offPeakStart, 16 * 60 + 30)
-      var endMin = parseClock(config.offPeakEnd, 30)
-      var now = new Date(nowMs)
-      var year = now.getUTCFullYear()
-      var month = now.getUTCMonth()
-      var date = now.getUTCDate()
-      var start = new Date(Date.UTC(year, month, date, Math.floor(startMin / 60), startMin % 60))
-      var end = new Date(Date.UTC(year, month, date, Math.floor(endMin / 60), endMin % 60))
-      if (end.getTime() <= start.getTime()) end = new Date(end.getTime() + 86400000)
-      if (nowMs >= end.getTime()) {
-        start = new Date(start.getTime() + 86400000)
-        end = new Date(end.getTime() + 86400000)
+      var step = 60000
+      var limit = nowMs + 9 * 86400000
+      if (!isPeakAt(nowMs, config)) {
+        var endNow = nowMs
+        while (endNow < limit && !isPeakAt(endNow, config)) endNow += step
+        return { active: true, start: new Date(nowMs), end: new Date(endNow), startsInMs: 0, endsInMs: endNow - nowMs }
       }
-      var active = nowMs >= start.getTime() && nowMs < end.getTime()
-      return {
-        active: active,
-        start: start,
-        end: end,
-        startsInMs: start.getTime() - nowMs,
-        endsInMs: end.getTime() - nowMs,
-      }
+      var start = nowMs
+      while (start < limit && isPeakAt(start, config)) start += step
+      var end = start
+      while (end < limit && !isPeakAt(end, config)) end += step
+      return { active: false, start: new Date(start), end: new Date(end), startsInMs: start - nowMs, endsInMs: end - nowMs }
     }
 
     /* ------------------------------ styles ----------------------------- */
@@ -730,8 +777,9 @@ window.__ModuleLoader__.load({
           setDraft({
             displayCurrency: value.config.displayCurrency,
             rate: String(value.config.rate),
-            offPeakStart: value.config.offPeakStart,
-            offPeakEnd: value.config.offPeakEnd,
+            peakWindows: value.config.peakWindows,
+            peakDays: Array.isArray(value.config.peakDays) ? value.config.peakDays : [1, 2, 3, 4, 5],
+            holidays: Array.isArray(value.config.holidays) ? value.config.holidays : [],
             language: value.config.language,
             hideWallet: Boolean(value.config.hideWallet),
             hideLine: Boolean(value.config.hideLine),
@@ -827,8 +875,9 @@ window.__ModuleLoader__.load({
         call('save', {
           displayCurrency: draft.displayCurrency,
           rate: draft.rate,
-          offPeakStart: draft.offPeakStart,
-          offPeakEnd: draft.offPeakEnd,
+          peakWindows: draft.peakWindows,
+          peakDays: draft.peakDays,
+          holidays: draft.holidays,
           language: draft.language,
           hideWallet: draft.hideWallet,
           hideLine: draft.hideLine,
@@ -965,21 +1014,48 @@ window.__ModuleLoader__.load({
               h('span', { className: 'hint', key: 'h' }, t('budgetHint')),
             ]),
           ]),
-          h('div', { className: 'mp-time-row', key: 'time' }, [
-            h('div', { className: 'mp-field', key: 'start' }, [
-              h('label', { key: 'l' }, t('windowStart')),
-              h('input', {
-                key: 'i', className: 'mp-in', placeholder: '16:30', value: draft.offPeakStart,
-                onChange: function (event) { field('offPeakStart', event.target.value) },
-              }),
-            ]),
-            h('div', { className: 'mp-field', key: 'end' }, [
-              h('label', { key: 'l' }, t('windowEnd')),
-              h('input', {
-                key: 'i', className: 'mp-in', placeholder: '00:30', value: draft.offPeakEnd,
-                onChange: function (event) { field('offPeakEnd', event.target.value) },
-              }),
-            ]),
+          h('div', { className: 'mp-field', key: 'windows', style: { marginTop: 10 } }, [
+            h('label', { key: 'l' }, t('peakWindowsLabel')),
+            h('input', {
+              key: 'i', className: 'mp-in', placeholder: '01:00-04:00, 06:00-10:00', value: draft.peakWindows,
+              onChange: function (event) { field('peakWindows', event.target.value) },
+            }),
+            h('span', { className: 'hint', key: 'h' }, t('peakWindowsHint')),
+          ]),
+          h('div', { className: 'mp-field', key: 'days', style: { marginTop: 10 } }, [
+            h('label', { key: 'l' }, t('peakDaysLabel')),
+            h('div', { key: 'd', style: { display: 'flex', gap: 10, flexWrap: 'wrap' } }, weekdayNames(localeTag).map(function (name, index) {
+              var dayNumber = index + 1
+              var checked = (draft.peakDays || []).indexOf(dayNumber) !== -1
+              return h('label', {
+                key: 'd' + dayNumber,
+                style: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--dsw-alias-label-primary)' },
+              }, [
+                h('input', {
+                  key: 'i', type: 'checkbox', checked: checked,
+                  onChange: function (event) {
+                    var days = (draft.peakDays || []).slice()
+                    var position = days.indexOf(dayNumber)
+                    if (event.target.checked && position === -1) days.push(dayNumber)
+                    if (!event.target.checked && position !== -1) days.splice(position, 1)
+                    field('peakDays', days.sort(function (a, b) { return a - b }))
+                  },
+                }),
+                h('span', { key: 's' }, name),
+              ])
+            })),
+          ]),
+          h('div', { className: 'mp-field', key: 'holidays', style: { marginTop: 10 } }, [
+            h('label', { key: 'l' }, t('holidaysLabel')),
+            h('input', {
+              key: 'i', className: 'mp-in', placeholder: '2026-10-01, 2026-10-02',
+              value: (draft.holidays || []).join(', '),
+              onChange: function (event) {
+                var list = event.target.value.split(',').map(function (part) { return part.trim() }).filter(Boolean)
+                field('holidays', list)
+              },
+            }),
+            h('span', { className: 'hint', key: 'h' }, t('holidaysHint')),
           ]),
           h('div', { className: 'mp-field', key: 'besttime', style: { marginTop: 10 } }, [
             h('label', {
