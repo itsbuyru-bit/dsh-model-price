@@ -6,3 +6,5 @@ npm-debug.log*
 Thumbs.db
 *.tgz
 .dsh-office*/
+dsh-migration-*.zip
+migration/
