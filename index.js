@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, basename } from 'node:path'
@@ -568,6 +569,35 @@ export function apply(ctx, rawConfig = {}) {
     return /^(link|file):/.test(text) || /^([A-Za-z]:[\\/]|\/|\.\.?[\\/])/.test(text)
   }
 
+  /** Run git without a shell, without interactive credential prompts. */
+  function runGit(args) {
+    return new Promise((resolve) => {
+      execFile('git', args, {
+        timeout: 60000,
+        windowsHide: true,
+        env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      }, (error, stdout, stderr) => {
+        resolve({
+          ok: !error,
+          output: `${stdout || ''}${stderr || ''}`.trim(),
+          message: error ? String(error.message || error) : '',
+        })
+      })
+    })
+  }
+
+  /** Local checkout facts, or null when the path is not a git working tree. */
+  async function gitRepoState(path) {
+    if (!path || !existsSync(join(path, '.git'))) return null
+    const branch = await runGit(['-C', path, 'rev-parse', '--abbrev-ref', 'HEAD'])
+    const head = await runGit(['-C', path, 'rev-parse', '--short', 'HEAD'])
+    return {
+      branch: branch.ok ? branch.output : null,
+      head: head.ok ? head.output : null,
+      dirty: false,
+    }
+  }
+
   async function bundleFacts() {
     const manager = ctx.get('pluginManager')
     if (!manager || typeof manager.listBundles !== 'function') {
@@ -600,6 +630,7 @@ export function apply(ctx, rawConfig = {}) {
     const available = Boolean(latest && isNewer(latest, version))
     const local = isLocalSource(facts.source)
     const path = local ? localPathOf(facts.source) : ''
+    const repo = local && path ? await gitRepoState(path) : null
     const profile = profileName()
     const spec = latest ? `github:itsbuyru-bit/dsh-model-price@v${latest}` : 'github:itsbuyru-bit/dsh-model-price'
     const command = local && path
@@ -611,12 +642,14 @@ export function apply(ctx, rawConfig = {}) {
       available,
       profile,
       local,
-      mode: local ? 'local' : 'remote',
+      path,
+      repo,
+      mode: local ? (repo ? 'git' : 'local') : 'remote',
       source: facts.source,
       manager: facts.manager,
       spec,
       command,
-      canAuto: !local && available && facts.manager,
+      canAuto: facts.manager && (local ? Boolean(repo) : available),
       url: (runtime.update && runtime.update.url) || `${REPO_URL}/releases`,
     }
   }
@@ -624,6 +657,22 @@ export function apply(ctx, rawConfig = {}) {
   async function startUpdate() {
     const info = await describeUpdate()
     if (!info.manager) return { started: false, reason: 'no-manager', info }
+    if (info.mode === 'git') {
+      // A local checkout updates through its own remote; the running Host keeps
+      // the old modules until DSH restarts, so the answer carries what changed.
+      const pulled = await runGit(['-C', info.path, 'pull', '--ff-only'])
+      if (!pulled.ok) {
+        return { started: false, reason: 'git-failed', output: pulled.output || pulled.message, info }
+      }
+      const head = await runGit(['-C', info.path, 'rev-parse', '--short', 'HEAD'])
+      return {
+        started: true,
+        mode: 'git',
+        output: pulled.output,
+        head: head.ok ? head.output : null,
+        info,
+      }
+    }
     if (info.mode === 'local') return { started: false, reason: 'local', info }
     if (!info.available) return { started: false, reason: 'up-to-date', info }
     const manager = ctx.get('pluginManager')

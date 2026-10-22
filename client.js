@@ -368,6 +368,7 @@ window.__ModuleLoader__.load({
       '.mp-modal-cmd{display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-base)}',
       '.mp-modal-cmd code{flex:1;min-width:0;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-primary)}',
       '.mp-modal-note{margin:10px 0 0;font-size:11px;line-height:1.5;color:var(--dsw-alias-label-secondary)}',
+      '.mp-modal-git{margin:8px 0 0;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-base);font:10.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;max-height:110px;overflow:auto;color:var(--dsw-alias-label-secondary)}',
       '.mp-modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}',
       '.mp-about-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}',
       '.mp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
@@ -1162,8 +1163,24 @@ window.__ModuleLoader__.load({
       function startAutoUpdate() {
         setDialogStatus('starting')
         call('update', {}).then(function (value) {
-          if (value && value.started) setDialogStatus('started')
-          else setDialogStatus('manual:' + String((value && value.reason) || 'unknown'))
+          if (value && value.started && value.mode === 'git') {
+            setDialogInfo(Object.assign({}, dialogInfo, {
+              gitHead: value.head || null,
+              gitOutput: value.output || '',
+            }))
+            setDialogStatus('git-ok')
+            return
+          }
+          if (value && value.started) {
+            setDialogStatus('started')
+            return
+          }
+          if (value && value.reason === 'git-failed') {
+            setDialogInfo(Object.assign({}, dialogInfo, { gitOutput: value.output || '' }))
+            setDialogStatus('manual:git-failed')
+            return
+          }
+          setDialogStatus('manual:' + String((value && value.reason) || 'unknown'))
         }).catch(function () {
           // Swapping the bundle can drop the response after the update started.
           setDialogStatus('started')
@@ -1171,6 +1188,7 @@ window.__ModuleLoader__.load({
       }
 
       function dialogNote() {
+        if (dialogStatus === 'git-ok') return h('span', { className: 'mp-ok' }, t('updateGitPulled'))
         if (dialogStatus === 'started') return h('span', { className: 'mp-ok' }, t('updateStarted'))
         if (dialogStatus === 'copied') return h('span', { className: 'mp-ok' }, t('updateCopied'))
         if (dialogStatus === 'copy-failed') return h('span', { className: 'mp-err' }, t('updateFailed'))
@@ -1179,6 +1197,7 @@ window.__ModuleLoader__.load({
         if (dialogStatus.indexOf('manual:') === 0) {
           var reason = dialogStatus.slice(7)
           if (reason === 'local') return h('span', { className: 'mp-muted' }, t('updateLocalOnly'))
+          if (reason === 'git-failed') return h('span', { className: 'mp-err' }, t('updateGitFailed'))
           if (reason === 'up-to-date') return h('span', { className: 'mp-ok' }, t('upToDate'))
           return h('span', { className: 'mp-muted' }, t('updateNoManager'))
         }
@@ -1666,8 +1685,13 @@ window.__ModuleLoader__.load({
                 }, dialogStatus === 'copied' ? t('updateCopied') : t('updateCopy')),
               ]),
             ]),
-            dialogInfo && dialogInfo.mode === 'local'
-              ? h('p', { className: 'mp-modal-note', key: 'local' }, t('updateLocalOnly'))
+            dialogInfo && dialogInfo.mode === 'git'
+              ? h('p', { className: 'mp-modal-note', key: 'localgit' }, t('updateLocalGitNote'))
+              : dialogInfo && dialogInfo.mode === 'local'
+                ? h('p', { className: 'mp-modal-note', key: 'local' }, t('updateLocalOnly'))
+                : null,
+            dialogInfo && dialogInfo.gitOutput
+              ? h('pre', { className: 'mp-modal-git', key: 'gitout' }, dialogInfo.gitOutput)
               : null,
             dialogNote()
               ? h('div', { className: 'mp-modal-note', key: 'note' }, dialogNote())

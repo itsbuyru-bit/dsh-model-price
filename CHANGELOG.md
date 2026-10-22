@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] — 2026-10-22
+
+### Added
+
+- **Update automatically** works for local git checkouts too: the Host runs
+  `git pull --ff-only` in the linked working copy (no shell, no interactive
+  credential prompt, 60 s timeout), returns the pull output and the new short
+  HEAD, and the dialog prints them. The new host code loads after a DSH restart;
+  the client loads on the next page refresh.
+- A local directory that is not a git repository still refuses the automatic
+  path and keeps the manual `dsh plugin … add link:…` command.
+
+[1.9.0]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.9.0
+
 ## [1.8.0] — 2026-10-22
 
 ### Added
