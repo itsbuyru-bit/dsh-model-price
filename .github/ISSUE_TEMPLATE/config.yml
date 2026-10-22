@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support
+    url: https://github.com/itsbuyru-bit/dsh-model-price/blob/main/SUPPORT.md
+    about: Where to ask for help and what to include
+  - name: Security policy
+    url: https://github.com/itsbuyru-bit/dsh-model-price/blob/main/SECURITY.md
+    about: Report security issues privately
