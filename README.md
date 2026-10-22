@@ -55,7 +55,6 @@ session logs, and keeps all of its data in `~/.dsh/api-spend/`.
 - [Project structure](#project-structure)
 - [Testing](#testing)
 - [Updating](#updating)
-- [Moving to another computer](#moving-to-another-computer)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
@@ -344,7 +343,6 @@ dsh-model-price/
 ├── test/pricing.test.mjs    # node:test unit suite
 ├── docs/                    # Architecture, translation guide, images
 ├── site/                    # Static landing page (GitHub Pages)
-├── migrate.ps1 / migrate.cmd # Export/import the workspace between PCs
 ├── scripts/check.mjs        # Manifest, syntax and locale-parity checks
 ├── .github/workflows/       # ci.yml, pages.yml, release.yml
 ├── README.md                # English
@@ -397,42 +395,6 @@ and pull request.
 - Host changes require reinstalling the bundle; client changes only need a page
   refresh.
 - Settings and totals survive updates; they are not part of the package.
-
----
-
-## Moving to another computer
-
-`migrate.ps1` moves this workspace's chats, plugin settings and the plugin
-itself between machines. Run it on the old PC, copy the archive to the new one,
-run the same script again.
-
-**Export (old PC):**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File migrate.ps1 -Workspace D:\WorkSpaseAI\Lab01
-```
-
-It writes `dsh-migration-<machine>-<date>.zip` next to the script. The archive
-contains the session logs of that workspace (including subagents), the workspace
-registration, `~/.dsh/api-spend` (prices, currency, totals) and the plugin
-sources. Credentials are **not** included.
-
-**Import (new PC):** copy `migrate.ps1`, `migrate.cmd` and the ZIP into one
-folder and run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File migrate.ps1
-```
-
-When a `dsh-migration-*.zip` sits next to the script it switches to import mode
-and asks **Install this chat on this computer?**. It restores the sessions,
-merges the workspace entry, copies the settings and extracts the plugin. If the
-workspace path differs, the session `cwd` is rewritten with Node.js (the Node
-bundled in `~/.dsh/dsh-runtimes` is found automatically). Close DSH first; an
-existing settings file is kept and the imported one is saved as
-`config.imported-*.json`.
-
-Double-click `migrate.cmd` for the same flow without a terminal.
 
 ---
 

@@ -4,19 +4,6 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
-
-### Added
-
-- `migrate.ps1` / `migrate.cmd`: export the workspace chats, plugin settings and
-  the plugin into one ZIP, and import it on another computer (the script detects
-  the archive next to itself and asks before installing).
-
-### Fixed
-
-- `migrate.ps1` no longer writes to the read-only `$HOME` automatic variable,
-  which aborted the script on Windows PowerShell 5.1.
-
 ## [1.4.1] — 2026-10-22
 
 ### Added
