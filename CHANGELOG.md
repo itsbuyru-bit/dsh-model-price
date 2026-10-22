@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.2] — 2026-10-22
+
+### Changed
+
+- The default 2026 holidays now cover the full official holiday blocks,
+  including bridge days (33 dates), because DeepSeek bills the whole period as
+  Off-Peak. Weekend make-up workdays stay Off-Peak through the normal weekend
+  rule and need no entry.
+
+[1.6.2]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.6.2
+
 ## [1.6.1] — 2026-10-22
 
 ### Added

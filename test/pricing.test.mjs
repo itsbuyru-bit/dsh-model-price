@@ -136,11 +136,13 @@ test('requestUsage separates free and billable Search/Fetch calls', () => {
   assert.ok(Math.abs(usage.costUsd - 0.00075) < 1e-12)
 })
 
-test('default 2026 statutory holidays make weekdays Off-Peak', () => {
+test('default 2026 holiday blocks make weekdays and bridge days Off-Peak', () => {
   const config = { holidays: DEFAULT_HOLIDAYS_2026 }
   // 2026-02-17 (Tuesday, Spring Festival) and 2026-10-01 (Thursday) are holidays.
   assert.equal(isOffPeak(Date.parse('2026-02-17T02:00:00Z'), config), true)
   assert.equal(isOffPeak(Date.parse('2026-10-01T02:00:00Z'), config), true)
+  // 2026-02-15 is a Sunday bridge day of the Spring Festival block.
+  assert.equal(isOffPeak(Date.parse('2026-02-15T02:00:00Z'), config), true)
   // 2026-02-24 is a regular Tuesday.
   assert.equal(isOffPeak(Date.parse('2026-02-24T02:00:00Z'), config), false)
 })
