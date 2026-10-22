@@ -92,6 +92,9 @@
     "about": "About",
     "checkUpdatesLabel": "Check for updates",
     "checkUpdatesHint": "One request to GitHub every 6 hours; no other data is sent.",
-    "updateAvailable": "Update available"
+    "updateAvailable": "Update available",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "upToDate": "Up to date"
   }
 }

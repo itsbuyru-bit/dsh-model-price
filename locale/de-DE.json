@@ -92,6 +92,9 @@
     "about": "Über",
     "checkUpdatesLabel": "Nach Updates suchen",
     "checkUpdatesHint": "Eine Anfrage an GitHub alle 6 Stunden; es werden keine weiteren Daten gesendet.",
-    "updateAvailable": "Update verfügbar"
+    "updateAvailable": "Update verfügbar",
+    "checkNow": "Jetzt prüfen",
+    "checking": "Prüfe…",
+    "upToDate": "Aktuell"
   }
 }

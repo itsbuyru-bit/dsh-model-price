@@ -630,6 +630,10 @@ export function apply(ctx, rawConfig = {}) {
       await refreshWallet()
       return { wallet: walletView() }
     },
+    async checkUpdate() {
+      await refreshUpdate(true)
+      return { update: updateView() }
+    },
     async locales() {
       return readLocales()
     },

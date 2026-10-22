@@ -92,6 +92,9 @@
     "about": "О плагине",
     "checkUpdatesLabel": "Проверять обновления",
     "checkUpdatesHint": "Один запрос к GitHub раз в 6 часов; других данных не отправляется.",
-    "updateAvailable": "Доступно обновление"
+    "updateAvailable": "Доступно обновление",
+    "checkNow": "Проверить сейчас",
+    "checking": "Проверяем…",
+    "upToDate": "Обновлений нет"
   }
 }

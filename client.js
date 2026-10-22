@@ -230,7 +230,7 @@ window.__ModuleLoader__.load({
       '.mp-about a{color:var(--dsw-alias-label-primary);text-decoration:underline;text-underline-offset:2px}',
       '.mp-about a:hover{color:var(--dsw-alias-brand-primary)}',
       '.mp-update{color:var(--dsw-alias-state-warn-primary);font-weight:600;margin-bottom:4px}',
-      '.mp-about-toggle{margin-bottom:8px}',
+      '.mp-about-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}',
       '.mp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
       '.mp-ok{color:var(--dsw-alias-state-success-primary);font-size:11.5px}',
       '.mp-err{color:var(--dsw-alias-state-error-primary);font-size:11.5px}',
@@ -641,6 +641,9 @@ window.__ModuleLoader__.load({
       var catalogBox = useState('')
       var catalogStatus = catalogBox[0]
       var setCatalogStatus = catalogBox[1]
+      var updateStatusBox = useState('')
+      var updateStatus = updateStatusBox[0]
+      var setUpdateStatus = updateStatusBox[1]
       var localeData = useLocaleData()
 
       var refresh = useCallback(function () {
@@ -789,10 +792,21 @@ window.__ModuleLoader__.load({
       function toggleUpdates(event) {
         var next = event.target.checked
         setDraft(Object.assign({}, draft, { checkUpdates: next }))
+        setUpdateStatus('')
         call('save', { checkUpdates: next }).then(function (value) {
           setLoaded(value)
         }).catch(function () {
           setDraft(Object.assign({}, draft, { checkUpdates: !next }))
+        })
+      }
+
+      function checkNow() {
+        setUpdateStatus('checking')
+        call('checkUpdate', {}).then(function (value) {
+          setLoaded(Object.assign({}, loaded, { update: value.update }))
+          setUpdateStatus(value.update && value.update.available ? 'found' : 'ok')
+        }).catch(function () {
+          setUpdateStatus('error')
         })
       }
 
@@ -1050,7 +1064,16 @@ window.__ModuleLoader__.load({
               }),
               h('span', { key: 's' }, t('checkUpdatesLabel')),
             ]),
-            h('div', { key: 'hint', style: { fontSize: 10.5, marginTop: 2 } }, t('checkUpdatesHint')),
+            h('button', {
+              key: 'now', type: 'button', className: 'mp-btn ghost',
+              disabled: updateStatus === 'checking' || !draft.checkUpdates,
+              style: { marginLeft: 8, height: 24, padding: '0 8px', fontSize: 11 },
+              onClick: checkNow,
+            }, updateStatus === 'checking' ? t('checking') : t('checkNow')),
+            updateStatus === 'ok' ? h('span', { key: 'ok', className: 'mp-ok' }, t('upToDate')) : null,
+            updateStatus === 'found' ? h('span', { key: 'found', className: 'mp-update' }, t('updateAvailable')) : null,
+            updateStatus === 'error' ? h('span', { key: 'err', className: 'mp-err' }, t('loadFailed')) : null,
+            h('div', { key: 'hint', style: { fontSize: 10.5, marginTop: 2, flexBasis: '100%' } }, t('checkUpdatesHint')),
           ]),
           loaded && loaded.update && loaded.update.enabled && loaded.update.available
             ? h('div', { className: 'mp-update', key: 'upd' }, [
