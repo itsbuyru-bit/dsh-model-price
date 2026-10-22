@@ -25,13 +25,13 @@ session logs, and keeps all of its data in `~/.dsh/api-spend/`.
 
 ## Screenshots
 
-| Settings — Display | Settings — Models |
-|:---:|:---:|
-| <a href="docs/images/settings-display.png"><img src="docs/images/settings-display.png" width="380" alt="Settings: display currency, Off-Peak window and best-time toggle"></a> | <a href="docs/images/settings-models.png"><img src="docs/images/settings-models.png" width="380" alt="Settings: model prices, model sync and About block"></a> |
-
 <p align="center">
   <a href="docs/images/popover.png"><img src="docs/images/popover.png" width="680" alt="Spend popover: best time, wallet, session tokens and per-model cost"></a>
 </p>
+
+| Settings — Display | Settings — Models |
+|:---:|:---:|
+| <a href="docs/images/settings-display.png"><img src="docs/images/settings-display.png" width="380" alt="Settings: display currency, Off-Peak window and best-time toggle"></a> | <a href="docs/images/settings-models.png"><img src="docs/images/settings-models.png" width="380" alt="Settings: model prices, model sync and About block"></a> |
 
 ---
 

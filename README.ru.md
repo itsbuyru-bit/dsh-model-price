@@ -25,13 +25,13 @@
 
 ## Скриншоты
 
-| Настройки — Display | Настройки — Models |
-|:---:|:---:|
-| <a href="docs/images/settings-display.png"><img src="docs/images/settings-display.png" width="380" alt="Настройки: валюта, окно Off-Peak и переключатель лучшего времени"></a> | <a href="docs/images/settings-models.png"><img src="docs/images/settings-models.png" width="380" alt="Настройки: цены моделей, синхронизация и блок «О плагине»"></a> |
-
 <p align="center">
   <a href="docs/images/popover.png"><img src="docs/images/popover.png" width="680" alt="Поповер: лучшее время, кошелёк, токены сессии и стоимость по модели"></a>
 </p>
+
+| Настройки — Display | Настройки — Models |
+|:---:|:---:|
+| <a href="docs/images/settings-display.png"><img src="docs/images/settings-display.png" width="380" alt="Настройки: валюта, окно Off-Peak и переключатель лучшего времени"></a> | <a href="docs/images/settings-models.png"><img src="docs/images/settings-models.png" width="380" alt="Настройки: цены моделей, синхронизация и блок «О плагине»"></a> |
 
 ---
 
