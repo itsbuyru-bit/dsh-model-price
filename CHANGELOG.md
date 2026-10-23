@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.9.1] — 2026-10-23
+
+### Fixed
+
+- The update dialog keeps **Update automatically** disabled when the local and
+  the latest release versions match; it also turns off after a successful
+  `git pull` until DSH restarts.
+
+[1.9.1]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.9.1
+
 ## [1.9.0] — 2026-10-22
 
 ### Added

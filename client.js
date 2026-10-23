@@ -1161,12 +1161,17 @@ window.__ModuleLoader__.load({
       }
 
       function startAutoUpdate() {
+        if (!dialogInfo || dialogInfo.available !== true) {
+          setDialogStatus('manual:up-to-date')
+          return
+        }
         setDialogStatus('starting')
         call('update', {}).then(function (value) {
           if (value && value.started && value.mode === 'git') {
             setDialogInfo(Object.assign({}, dialogInfo, {
               gitHead: value.head || null,
               gitOutput: value.output || '',
+              available: false,
             }))
             setDialogStatus('git-ok')
             return
@@ -1704,7 +1709,8 @@ window.__ModuleLoader__.load({
               }, t('updateCheckAgain')),
               h('button', {
                 className: 'mp-btn pri', type: 'button',
-                disabled: !dialogInfo || !dialogInfo.canAuto || dialogStatus === 'starting' || dialogStatus === 'started',
+                disabled: !dialogInfo || !dialogInfo.available || !dialogInfo.canAuto || dialogStatus === 'starting' || dialogStatus === 'started',
+                title: dialogInfo && !dialogInfo.available ? t('upToDate') : null,
                 onClick: startAutoUpdate,
               }, dialogStatus === 'starting' ? t('checking') : t('updateAuto')),
             ]),
