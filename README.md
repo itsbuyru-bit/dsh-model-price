@@ -335,14 +335,9 @@ FX rate is manual by design.
 
 ## Project website
 
-A static landing page lives in [`site/`](site/): dark hero, screenshots, feature
-grid, install command and an EN/RU switch. It is published with GitHub Pages:
+Landing page with screenshots, features and the install command:
 
 **https://itsbuyru-bit.github.io/dsh-model-price/**
-
-Deployment uses `.github/workflows/pages.yml`; enable it once in
-**Settings → Pages → Source → GitHub Actions**, then every push to `main`
-publishes `site/`.
 
 ---
 

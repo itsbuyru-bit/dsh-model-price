@@ -24,3 +24,11 @@ language* section of the [README](README.md).
 
 Keep the plugin dependency-free and build-free, and use theme tokens
 (`--dsw-alias-*`, `--dsw-specific-*`) instead of literal colors for UI.
+
+## Website
+
+The landing page lives in `site/`: `index.html` (EN), `ru/index.html` (RU), shared
+`styles.css` and `assets/`. It is deployed by `.github/workflows/pages.yml`; enable
+Pages once in **Settings → Pages → Source → GitHub Actions**, after which every push
+to `main` publishes the `site/` artifact to
+https://itsbuyru-bit.github.io/dsh-model-price/.
