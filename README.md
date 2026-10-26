@@ -3,6 +3,7 @@
 **English** | [Русский](README.ru.md) | [Website](https://itsbuyru-bit.github.io/dsh-model-price/)
 
 [![CI](https://github.com/itsbuyru-bit/dsh-model-price/actions/workflows/ci.yml/badge.svg)](https://github.com/itsbuyru-bit/dsh-model-price/actions/workflows/ci.yml)
+[![dsh-doctor R+K](https://img.shields.io/github/actions/workflow/status/itsbuyru-bit/dsh-model-price/plugin-doctor.yml?branch=main&label=dsh-doctor%20R%2BK)](https://github.com/PerryLink/dsh-plugin-doctor/blob/main/SPEC.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform: Web / Desktop](https://img.shields.io/badge/platform-Web%20%2F%20Desktop-0078D4.svg)](#requirements)
 [![DeepSeek Harness: 0.2.x](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-6f42c1.svg)](#supported-versions)
