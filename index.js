@@ -395,7 +395,7 @@ export function apply(ctx, rawConfig = {}) {
     spend.total += cost
   }
 
-  function addStateToSpend(spend, state, config) {
+  function addStateToSpend(spend, state, config, available) {
     if (!state) return
     addRequestsToSpend(spend, state, config)
     for (const [key, model] of Object.entries(state.models || {})) {
@@ -415,6 +415,9 @@ export function apply(ctx, rawConfig = {}) {
           peakCost: 0,
           offCost: 0,
           priced: Boolean(price),
+          // A route the current Settings → Models no longer offers can still
+          // appear in history; the UI marks it instead of showing a missing price.
+          available: available ? available.has(key) : true,
           currency: price ? price.currency : config.displayCurrency,
           peakUnit: price ? price.peak : null,
           offUnit: price ? price.off : null,
@@ -438,13 +441,13 @@ export function apply(ctx, rawConfig = {}) {
     spend.missing += state.missing || 0
   }
 
-  async function buildSession(sessionId) {
+  async function buildSession(sessionId, available) {
     const cfg = runtime.config
     const self = emptySpend()
     const children = emptySpend()
     const root = ctx.sessions.get(sessionId)
     const rootState = root ? ctx.sessionProjections.stateOf(root, KEY) : undefined
-    addStateToSpend(self, rootState, cfg)
+    addStateToSpend(self, rootState, cfg, available)
     let entries = []
     try {
       const subagents = ctx.get('subagents')
@@ -460,7 +463,7 @@ export function apply(ctx, rawConfig = {}) {
       const session = ctx.sessions.get(entry.id)
       if (!session) continue
       ids.push(entry.id)
-      addStateToSpend(children, ctx.sessionProjections.stateOf(session, KEY), cfg)
+      addStateToSpend(children, ctx.sessionProjections.stateOf(session, KEY), cfg, available)
     }
     const running = [sessionId, ...ids].some((id) => ctx.agents?.get?.(id)?.status === 'running')
     const total = self.total + children.total
@@ -489,18 +492,20 @@ export function apply(ctx, rawConfig = {}) {
         billableFetches: self.requests.billableFetches + children.requests.billableFetches,
         cost: self.requests.cost + children.requests.cost,
       },
-      unpriced: [...self.rows, ...children.rows].filter((r) => !r.priced).map((r) => r.key),
+      unpriced: [...self.rows, ...children.rows]
+        .filter((r) => !r.priced && r.available !== false)
+        .map((r) => r.key),
     }
   }
 
-  function allTimeView() {
+  function allTimeView(available) {
     const cfg = runtime.config
     const spend = emptySpend()
     addStateToSpend(spend, {
       models: runtime.totals.models,
       missing: 0,
       requestLog: runtime.totals.requestLog,
-    }, cfg)
+    }, cfg, available)
     return {
       since: runtime.totals.since,
       total: spend.total,
@@ -792,6 +797,107 @@ export function apply(ctx, rawConfig = {}) {
     return fullConfig()
   }
 
+  /* -------- current model catalog -------- */
+
+  const CATALOG_TTL = 60_000
+  const catalogState = { at: 0, models: null }
+
+  /**
+   * Models the user can currently route to: registered providers, narrowed to
+   * the explicit `models` list each provider's settings carries, with the
+   * account-scoped catalog and the default model added. Cached briefly because
+   * every state poll asks which historical routes are still offered.
+   */
+  async function collectCatalog() {
+    const llm = ctx.get('llm')
+    if (!llm || typeof llm.listProviders !== 'function') return []
+    let providers = []
+    try {
+      providers = llm.listProviders() || []
+    } catch {
+      providers = []
+    }
+
+    // Models the user actually bound in Settings → Models. A provider whose
+    // settings entry carries an explicit (even empty) `models` array must be
+    // taken from that array only; the adapter catalog is just its defaults.
+    let configured = new Map()
+    let defaults = null
+    const settings = ctx.get('settings')
+    if (settings && typeof settings.describe === 'function') {
+      let entries = []
+      try {
+        entries = settings.describe({ redactSecrets: true }) || []
+      } catch {
+        entries = []
+      }
+      const setup = configuredSetup(entries)
+      configured = setup.configured
+      defaults = setup.defaults
+    }
+
+    const models = []
+    const seen = new Set()
+    const push = (provider, id, name) => {
+      if (!provider || !id) return
+      const key = `${provider}/${id}`
+      if (seen.has(key)) return
+      seen.add(key)
+      models.push({ provider, providerName: provider, model: id, name: name || id })
+    }
+
+    const listedFor = async (providerId) => {
+      try {
+        return await Promise.race([
+          llm.listModels(providerId),
+          new Promise((resolve) => {
+            const timer = setTimeout(() => resolve([]), 4000)
+            timer.unref?.()
+          }),
+        ])
+      } catch {
+        return []
+      }
+    }
+
+    await Promise.all(providers.map(async (provider) => {
+      const explicit = configured.get(provider.id)
+      if (explicit !== undefined) {
+        // Empty list = the user selected nothing for this provider.
+        if (explicit.length === 0) return
+        const listed = await listedFor(provider.id)
+        const names = new Map((listed || []).map((model) => [model.id, model.name]))
+        for (const id of explicit) push(provider.id, id, names.get(id))
+        return
+      }
+      // Account-scoped providers have no per-model settings: their catalog is
+      // bound to the signed-in account, so it is safe to list.
+      if (!settings || provider.id === 'deepseek-account') {
+        const listed = await listedFor(provider.id)
+        for (const model of listed || []) push(provider.id, model.id, model.name)
+      }
+    }))
+
+    if (defaults) push(defaults.provider, defaults.model, null)
+    models.sort((a, b) => a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model))
+    return models
+  }
+
+  async function catalogModels(force) {
+    if (!force && catalogState.models && Date.now() - catalogState.at < CATALOG_TTL) {
+      return catalogState.models
+    }
+    const models = await collectCatalog()
+    catalogState.at = Date.now()
+    catalogState.models = models
+    return models
+  }
+
+  async function availableKeySet(force) {
+    const models = await catalogModels(force)
+    return new Set(models.map((model) => `${model.provider}/${model.model}`))
+  }
+
   /* -------- HTTP API -------- */
 
   const api = {
@@ -800,19 +906,27 @@ export function apply(ctx, rawConfig = {}) {
       if (!sessionId) throw new Error('sessionId is required')
       if (Date.now() - runtime.walletAt > 45000) void refreshWallet()
       if (Date.now() - runtime.updateAt > UPDATE_INTERVAL) void refreshUpdate()
-      const session = await buildSession(sessionId)
+      const available = await availableKeySet()
+      const session = await buildSession(sessionId, available)
       return {
         config: publicConfig(),
         wallet: walletView(),
         tariff: isOffPeak(Date.now(), runtime.config) ? 'off' : 'peak',
         session,
-        allTime: allTimeView(),
+        allTime: allTimeView(available),
         update: updateView(),
       }
     },
     async config() {
       if (Date.now() - runtime.updateAt > UPDATE_INTERVAL) void refreshUpdate()
-      return { config: fullConfig(), models: usedModels(), allTime: allTimeView(), update: updateView() }
+      const available = await availableKeySet()
+      return {
+        config: fullConfig(),
+        models: usedModels(),
+        availableModels: [...available],
+        allTime: allTimeView(available),
+        update: updateView(),
+      }
     },
     async save(payload) {
       const before = runtime.config.checkUpdates
@@ -820,7 +934,14 @@ export function apply(ctx, rawConfig = {}) {
       if (payload && payload.prices) void refreshWallet()
       if (runtime.config.checkUpdates && !before) void refreshUpdate(true)
       if (!runtime.config.checkUpdates) runtime.update = null
-      return { config: fullConfig(), models: usedModels(), allTime: allTimeView(), update: updateView() }
+      const available = await availableKeySet()
+      return {
+        config: fullConfig(),
+        models: usedModels(),
+        availableModels: [...available],
+        allTime: allTimeView(available),
+        update: updateView(),
+      }
     },
     async wallet() {
       await refreshWallet()
@@ -840,78 +961,7 @@ export function apply(ctx, rawConfig = {}) {
       return readLocales()
     },
     async catalog() {
-      const llm = ctx.get('llm')
-      if (!llm || typeof llm.listProviders !== 'function') return { models: [] }
-      let providers = []
-      try {
-        providers = llm.listProviders() || []
-      } catch {
-        providers = []
-      }
-
-      // Models the user actually bound in Settings → Models. A provider whose
-      // settings entry carries an explicit (even empty) `models` array must be
-      // taken from that array only; the adapter catalog is just its defaults.
-      let configured = new Map()
-      let defaults = null
-      const settings = ctx.get('settings')
-      if (settings && typeof settings.describe === 'function') {
-        let entries = []
-        try {
-          entries = settings.describe({ redactSecrets: true }) || []
-        } catch {
-          entries = []
-        }
-        const setup = configuredSetup(entries)
-        configured = setup.configured
-        defaults = setup.defaults
-      }
-
-      const models = []
-      const seen = new Set()
-      const push = (provider, id, name) => {
-        if (!provider || !id) return
-        const key = `${provider}/${id}`
-        if (seen.has(key)) return
-        seen.add(key)
-        models.push({ provider, providerName: provider, model: id, name: name || id })
-      }
-
-      const listedFor = async (providerId) => {
-        try {
-          return await Promise.race([
-            llm.listModels(providerId),
-            new Promise((resolve) => {
-              const timer = setTimeout(() => resolve([]), 4000)
-              timer.unref?.()
-            }),
-          ])
-        } catch {
-          return []
-        }
-      }
-
-      await Promise.all(providers.map(async (provider) => {
-        const explicit = configured.get(provider.id)
-        if (explicit !== undefined) {
-          // Empty list = the user selected nothing for this provider.
-          if (explicit.length === 0) return
-          const listed = await listedFor(provider.id)
-          const names = new Map((listed || []).map((model) => [model.id, model.name]))
-          for (const id of explicit) push(provider.id, id, names.get(id))
-          return
-        }
-        // Account-scoped providers have no per-model settings: their catalog is
-        // bound to the signed-in account, so it is safe to list.
-        if (!settings || provider.id === 'deepseek-account') {
-          const listed = await listedFor(provider.id)
-          for (const model of listed || []) push(provider.id, model.id, model.name)
-        }
-      }))
-
-      if (defaults) push(defaults.provider, defaults.model, null)
-      models.sort((a, b) => a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model))
-      return { models }
+      return { models: await catalogModels(true) }
     },
     async reset() {
       runtime.totals = { since: new Date().toISOString(), models: {} }
@@ -921,7 +971,7 @@ export function apply(ctx, rawConfig = {}) {
       } catch {
         /* ignore */
       }
-      return { allTime: allTimeView() }
+      return { allTime: allTimeView(await availableKeySet()) }
     },
   }
 

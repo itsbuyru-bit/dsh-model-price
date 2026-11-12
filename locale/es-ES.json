@@ -45,6 +45,7 @@
     "children": "Sesiones hijas",
     "missing": "Pasos sin uso",
     "unpriced": "Sin precio configurado",
+    "providerOff": "proveedor desactivado",
     "allTime": "Total histórico",
     "since": "desde",
     "reset": "Restablecer total",

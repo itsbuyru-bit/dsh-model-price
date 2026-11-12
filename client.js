@@ -265,6 +265,7 @@ window.__ModuleLoader__.load({
       '.mp-value{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary)}',
       '.mp-sep{opacity:.45;padding:0 1px}',
       '.mp-badge{display:inline-flex;align-items:center;height:16px;padding:0 6px;border-radius:8px;font-size:10px;font-weight:600;letter-spacing:.2px;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 18%, transparent);color:var(--dsw-alias-state-warn-primary)}',
+      '.mp-chip{display:inline-flex;align-items:center;height:15px;margin-left:6px;padding:0 6px;border-radius:8px;font-size:9.5px;font-weight:600;letter-spacing:.2px;background:color-mix(in srgb, var(--dsw-alias-label-secondary) 16%, transparent);color:var(--dsw-alias-label-secondary);vertical-align:middle}',
       '.mp-badge.off{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 16%, transparent);color:var(--dsw-alias-state-success-primary)}',
       '.mp-live{width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-state-success-primary);animation:mp-pulse 1.1s ease-in-out infinite}',
       '@keyframes mp-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}',
@@ -486,13 +487,20 @@ window.__ModuleLoader__.load({
           ].filter(Boolean).join(' · ')
           return h('tr', { key: row.key }, [
             h('td', { key: 'm' }, [
-              h('div', { className: 'mp-model', key: 'n' }, row.model || row.key),
+              h('div', { className: 'mp-model', key: 'n' }, [
+                row.model || row.key,
+                row.available === false
+                  ? h('span', { key: 'off', className: 'mp-chip' }, t('providerOff'))
+                  : null,
+              ]),
               h('div', { className: 'mp-tok', key: 'p' }, (row.provider || '') + ' · ' + compact(tokens) + ' ' + t('tokensShort')),
               h('div', { className: 'mp-tok', key: 'd' }, detail),
             ]),
             h('td', { key: 'c', className: 'r' }, row.priced
               ? money(row.cost, props.currency)
-              : h('span', { className: 'mp-warn' }, '?')),
+              : row.available === false
+                ? h('span', { className: 'mp-muted' }, '—')
+                : h('span', { className: 'mp-warn' }, '?')),
           ])
         })),
       ])
@@ -762,14 +770,19 @@ window.__ModuleLoader__.load({
       return { input: '', output: '', cacheHit: '', cacheWrite: '' }
     }
 
-    function normalizeRow(key, row) {
+    function normalizeRow(key, row, availableModels) {
       var peak = row && row.peak ? row.peak : {}
       var off = row && row.off ? row.off : {}
       // A row-level `schedule` is a per-model override of the shared Peak
       // windows/days/holidays; absent means "follow the shared schedule".
       var schedule = row && row.schedule && typeof row.schedule === 'object' ? row.schedule : null
+      var provider = String(key).split('/')[0]
       return {
         key: key,
+        provider: provider,
+        // False when Settings → Models no longer offers this route: the row is
+        // history, not a model that can be used again.
+        available: !Array.isArray(availableModels) || availableModels.indexOf(key) !== -1,
         currency: row && row.currency === 'CNY' ? 'CNY' : 'USD',
         peak: {
           input: peak.input === null || peak.input === undefined ? '' : String(peak.input),
@@ -868,7 +881,8 @@ window.__ModuleLoader__.load({
             requestBillingFrom: value.config.requestBillingFrom,
           })
           var keys = value.models.slice()
-          setRows(keys.map(function (key) { return normalizeRow(key, value.config.prices[key]) }))
+          var availableModels = Array.isArray(value.availableModels) ? value.availableModels : null
+          setRows(keys.map(function (key) { return normalizeRow(key, value.config.prices[key], availableModels) }))
           setAllTime(value.allTime)
         })
       }, [])
@@ -1014,11 +1028,12 @@ window.__ModuleLoader__.load({
           // rows for models that are no longer bound disappear together with
           // their prices.
           var next = []
+          var availableModels = loaded && Array.isArray(loaded.availableModels) ? loaded.availableModels : null
           for (var i = 0; i < value.models.length; i += 1) {
             var item = value.models[i]
             var key = item.provider + '/' + item.model
             var known = loaded && loaded.config && loaded.config.prices ? loaded.config.prices[key] : undefined
-            next.push(normalizeRow(key, known))
+            next.push(normalizeRow(key, known, availableModels))
           }
           setRows(next)
           setCatalogStatus('synced:' + next.length)
@@ -1441,6 +1456,9 @@ window.__ModuleLoader__.load({
               }, [
                 h('span', { className: 'mp-chev' + (isOpen ? ' open' : ''), key: 'ch' }, '▸'),
                 h('span', { className: 'mp-model-name', key: 'n' }, row.key),
+                row.available === false
+                  ? h('span', { key: 'off', className: 'mp-chip' }, t('providerOff'))
+                  : null,
                 isOpen ? null : h('span', { className: 'mp-model-summary', key: 'sum' }, summaryOf(row)),
                 h('span', { key: 'sp', className: 'spacer' }),
                 h('label', {

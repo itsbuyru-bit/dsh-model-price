@@ -45,6 +45,7 @@
     "children": "하위 세션",
     "missing": "사용량 없는 단계",
     "unpriced": "가격 미설정",
+    "providerOff": "제공자 비활성",
     "allTime": "전체 기간",
     "since": "이후",
     "reset": "합계 초기화",

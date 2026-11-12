@@ -45,6 +45,7 @@
     "children": "子会话",
     "missing": "无用量的步骤",
     "unpriced": "未配置价格",
+    "providerOff": "提供方已停用",
     "allTime": "累计",
     "since": "自",
     "reset": "重置总计",

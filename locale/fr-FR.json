@@ -45,6 +45,7 @@
     "children": "Sessions enfants",
     "missing": "Étapes sans usage",
     "unpriced": "Aucun prix configuré",
+    "providerOff": "fournisseur désactivé",
     "allTime": "Total général",
     "since": "depuis",
     "reset": "Réinitialiser le total",

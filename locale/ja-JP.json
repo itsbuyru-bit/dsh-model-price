@@ -45,6 +45,7 @@
     "children": "子セッション",
     "missing": "使用量のないステップ",
     "unpriced": "価格が未設定",
+    "providerOff": "プロバイダー無効",
     "allTime": "全期間",
     "since": "開始",
     "reset": "合計をリセット",

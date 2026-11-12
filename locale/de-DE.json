@@ -45,6 +45,7 @@
     "children": "Untergeordnete Sitzungen",
     "missing": "Schritte ohne Verbrauch",
     "unpriced": "Kein Preis konfiguriert",
+    "providerOff": "Anbieter deaktiviert",
     "allTime": "Gesamtzeitraum",
     "since": "seit",
     "reset": "Gesamtsumme zurücksetzen",

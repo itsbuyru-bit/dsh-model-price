@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.9.2] — 2026-11-12
+
+### Fixed
+
+- Rows for routes that **Settings → Models no longer offers** (for example a
+  `deepseek-official` or `gemini` route left over from history) are marked
+  **provider disabled** in the spend popover and in the model table instead of
+  being reported as unpriced. Their tokens and costs still count, and the
+  "no price configured" warning now covers only routes that can still be chosen.
+- `config` and `save` responses now carry `availableModels` — the exact routes
+  the current model settings offer — so the client distinguishes an unavailable
+  route from a missing price. The catalog is cached for 60 seconds.
+
+[1.9.2]: https://github.com/itsbuyru-bit/dsh-model-price/releases/tag/v1.9.2
+
 ## [1.9.1] — 2026-10-23
 
 ### Fixed

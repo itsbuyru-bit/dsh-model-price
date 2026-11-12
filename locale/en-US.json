@@ -45,6 +45,7 @@
     "children": "Child sessions",
     "missing": "Steps without usage",
     "unpriced": "No price configured",
+    "providerOff": "provider disabled",
     "allTime": "All time",
     "since": "since",
     "reset": "Reset total",
